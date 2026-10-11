@@ -175,10 +175,13 @@ export async function lerSaude(): Promise<Saude> {
   };
 }
 
-/** 45 → "45 segundos"; 190 → "3 minutos"; 7300 → "2 horas". */
+/** 45 → "45 segundos"; 190 → "3 min e 10 s"; 180 → "3 minutos"; 7300 → "2 horas".
+ *  Abaixo de 10 minutos mostra os segundos: é perto dos limites do semáforo,
+ *  e "3 minutos" sozinho não diria se passou ou não dos 3. */
 export function duracao(segundos: number): string {
   const s = Math.max(0, Math.round(segundos));
   if (s < 90) return s === 1 ? "1 segundo" : `${s} segundos`;
+  if (s < 600) return s % 60 ? `${Math.floor(s / 60)} min e ${s % 60} s` : `${s / 60} minutos`;
   const m = Math.round(s / 60);
   if (m < 90) return `${m} minutos`;
   const h = Math.round(m / 60);
