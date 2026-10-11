@@ -54,7 +54,7 @@ internet com login — errar ali abre o sistema.
 
 ```
 O0 ─► V1a + V1b ─┬─► V2 ─► V4 ─► V5
-                           └─► V3.x (uma fonte por vez, enquanto o resto anda)
+                 └─► V3.x (uma fonte por vez, enquanto o resto anda)
                                         L  (quando o Saulo decidir)
 ```
 
