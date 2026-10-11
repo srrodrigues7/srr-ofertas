@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "painel", "runtimeExecutable": "npx", "runtimeArgs": ["next", "dev", "-p", "3092"], "port": 3092 }
+  ]
+}

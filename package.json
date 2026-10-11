@@ -1,0 +1,45 @@
+{
+  "name": "srr-ofertas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "vercel-build": "node scripts/vercel-build.mjs",
+    "start": "next start",
+    "lint": "eslint",
+    "tipos": "tsc --noEmit",
+    "check": "prisma validate && eslint && tsc --noEmit && next build",
+    "postinstall": "prisma generate",
+    "motor": "tsx src/motor/motor.ts",
+    "vigia": "tsx src/motor/vigia.ts",
+    "banco:preparar": "node scripts/preparar-banco.mjs",
+    "banco:conferir": "tsx scripts/conferir-banco.ts",
+    "migrate:deploy": "prisma migrate deploy",
+    "saude": "tsx scripts/ver-saude.ts",
+    "pacote:instalador": "node scripts/montar-pacote.mjs"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "next": "16.3.8",
+    "pg": "8.23.0",
+    "prisma": "7.10.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tsx": "4.23.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.8",
+    "typescript": "5.9.3"
+  }
+}

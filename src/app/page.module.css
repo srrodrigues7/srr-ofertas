@@ -1,0 +1,264 @@
+.pagina {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 28px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* --- cabeçalho, com o arco de assinatura ---------------------------------- */
+
+.cabecalho {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0 10px;
+}
+
+.placa {
+  display: block;
+  border-radius: 12px;
+  padding: 6px 8px;
+  flex-shrink: 0;
+}
+
+/* No tema escuro a logo ganha uma placa clara: o marinho dela sumiria no
+   fundo marinho, e recolorir a marca não é opção (mesma regra do VoePro). */
+@media (prefers-color-scheme: dark) {
+  .placa {
+    background: #f1f5f9;
+  }
+}
+
+.logo {
+  display: block;
+  height: 48px;
+  width: auto;
+}
+
+.nome {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.sub {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.arco {
+  position: absolute;
+  right: 0;
+  top: -6px;
+  width: 260px;
+  height: 74px;
+  pointer-events: none;
+}
+.arco path {
+  fill: none;
+  stroke: var(--brand-vivo);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+/* --- o semáforo --------------------------------------------------------- */
+
+.semaforo {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.luz {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.motivo {
+  color: var(--ink-2);
+  font-size: 15px;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.verde {
+  background: var(--ok-soft);
+  border-color: color-mix(in srgb, var(--ok) 35%, transparent);
+}
+.verde .luz {
+  background: var(--ok);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--ok) 18%, transparent);
+}
+.verde .titulo {
+  color: var(--ok);
+}
+
+.amarelo {
+  background: var(--warn-soft);
+  border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+}
+.amarelo .luz {
+  background: var(--warn);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--warn) 18%, transparent);
+}
+.amarelo .titulo {
+  color: var(--warn);
+}
+
+.vermelho {
+  background: var(--crit-soft);
+  border-color: color-mix(in srgb, var(--crit) 35%, transparent);
+}
+.vermelho .luz {
+  background: var(--crit);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--crit) 18%, transparent);
+}
+.vermelho .titulo {
+  color: var(--crit);
+}
+
+/* --- os três números ---------------------------------------------------- */
+
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .numeros {
+    grid-template-columns: 1fr;
+  }
+  .arco {
+    display: none;
+  }
+}
+
+.numero {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rotulo {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.valor {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.detalhe {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.erro {
+  background: var(--crit-soft);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+/* --- listas ------------------------------------------------------------- */
+
+.bloco {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.blocoTitulo {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.vazio {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.linha {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+.linha:first-child {
+  border-top: 0;
+}
+
+.linhaTexto {
+  flex: 1;
+  min-width: 200px;
+  overflow-wrap: anywhere;
+}
+
+.linhaHora {
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.etiqueta {
+  border-radius: 20px;
+  padding: 1px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.etqOk {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.etqEspera {
+  background: var(--sunk);
+  color: var(--ink-2);
+}
+
+.rodape {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}

@@ -1,0 +1,83 @@
+SRR OFERTAS — O MOTOR NO COMPUTADOR DEDICADO
+=============================================
+
+O que é isto
+------------
+O motor é o programa que fica rodando o tempo todo neste computador e vai
+buscar as passagens. Ele liga sozinho quando o Windows inicia (sem ninguém
+precisar entrar), volta sozinho se cair e se atualiza sozinho quando uma
+versão nova é aprovada.
+
+Para ver se está tudo bem, de qualquer lugar: abra ofertas.srrviagens.com.br
+  - verde: trabalhando
+  - amarelo: atrasado (passou de 3 minutos sem sinal)
+  - vermelho: parado (passou de 10 minutos sem sinal)
+
+
+INSTALAR (uma vez)
+------------------
+1. Copie a pasta "SRR Ofertas" do pen drive para a Área de Trabalho deste
+   computador (ou rode direto do pen drive).
+2. Dê dois cliques em "Instalar SRR Ofertas".
+3. O Windows pergunta "Deseja permitir que este aplicativo faça alterações?"
+   Clique em SIM.
+4. Siga a tela. Num ponto ela abre o GitHub e pede para você colar uma chave
+   (já vem copiada, é só Ctrl+V) — isso deixa este computador só BAIXAR o
+   código, sem poder mudar nada.
+5. No fim aparece "Motor instalado e rodando".
+6. APAGUE o pen drive e a cópia da pasta: o arquivo .env tem a senha do banco.
+   (A instalação guarda uma cópia protegida em C:\SRR-Ofertas.)
+
+
+CONFERIR (quando quiser)
+------------------------
+Dê dois cliques em "Conferir SRR Ofertas", na Área de Trabalho. Ele mostra se
+o motor está rodando, a versão, as últimas linhas do log e o que o banco diz.
+
+
+LIGAR SOZINHO QUANDO A ENERGIA VOLTAR (uma vez, importante)
+-----------------------------------------------------------
+Quando a luz cai, o computador desliga. Para ele LIGAR SOZINHO quando a luz
+voltar, é preciso mudar uma opção que fica fora do Windows (na "BIOS"):
+
+1. Desligue o computador. Ligue e, logo que a tela acender, aperte várias
+   vezes a tecla de configuração. Normalmente é DEL ou F2 (às vezes F10, F12
+   ou ESC — costuma aparecer escrito na primeira tela, por um segundo).
+2. Procure uma opção com um destes nomes (geralmente dentro de "Power",
+   "Power Management", "Advanced" ou "Chipset"):
+     - Restore on AC Power Loss
+     - AC Power Recovery / AC Back
+     - After Power Failure / Power On After Power Fail
+     - State After G3
+3. Mude para "Power On" (ou "Always On", ou "Last State").
+4. Aperte F10 para salvar e sair (confirme com "Yes").
+5. Teste: com o computador ligado, tire da tomada, espere 10 segundos e
+   coloque de volta. Ele deve ligar sozinho. Em 3 minutos, o painel volta
+   ao verde — sem ninguém entrar no Windows.
+
+Se for NOTEBOOK: a bateria já segura as quedas curtas. A maioria dos
+notebooks não liga sozinho depois que a bateria acaba; deixe-o sempre na
+tomada. Um nobreak simples resolve os dois casos.
+
+
+O WI-FI
+-------
+O motor precisa de internet. Confirme que o Wi-Fi deste computador está
+marcado como "Conectar automaticamente". Teste: reinicie o computador e NÃO
+entre no Windows. Em 3 minutos o painel deve estar verde.
+
+
+DESINSTALAR
+-----------
+Dois cliques em "Desinstalar SRR Ofertas" (em C:\SRR-Ofertas). Ele pede para
+digitar SIM.
+
+
+ONDE FICA CADA COISA
+--------------------
+C:\SRR-Ofertas\
+  vigia.mjs      quem liga, religa e atualiza o motor
+  .env           a configuração (com a senha do banco — não compartilhe)
+  logs\          o que aconteceu, um arquivo por dia (guarda 14 dias)
+  versoes\       a versão atual do motor e a anterior
+  estado.json    qual versão está rodando
