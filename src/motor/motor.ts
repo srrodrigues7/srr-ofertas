@@ -56,7 +56,12 @@ function descobrirVersao(): string {
 }
 
 const eu: Instancia = {
-  id: randomUUID(),
+  // Ligado pelo vigia, o motor tem identidade fixa por computador (MOTOR_ID):
+  // religado depois de uma queda ou de o Windows reiniciar, ele reconhece a
+  // trava como sua e volta a trabalhar na hora, em vez de esperar o prazo dela
+  // vencer. O vigia garante que só existe um motor dele por computador. Rodado
+  // à mão, cada processo é um motor novo.
+  id: process.env.MOTOR_ID?.trim() || randomUUID(),
   maquina: process.env.MOTOR_MAQUINA?.trim() || os.hostname(),
   pid: process.pid,
   versao: descobrirVersao(),
@@ -144,8 +149,10 @@ async function principal(): Promise<number> {
     }
   })();
 
-  await prisma.motorInstancia.create({
-    data: { id: eu.id, maquina: eu.maquina, pid: eu.pid, versao: eu.versao, estado: "esperando" },
+  await prisma.motorInstancia.upsert({
+    where: { id: eu.id },
+    create: { id: eu.id, maquina: eu.maquina, pid: eu.pid, versao: eu.versao, estado: "esperando" },
+    update: { maquina: eu.maquina, pid: eu.pid, versao: eu.versao, estado: "esperando", iniciouEm: new Date() },
   });
   await evento("subiu", `Motor subiu (processo ${eu.pid}).`);
   if (process.env.MOTOR_AVISO) await evento("aviso_do_vigia", process.env.MOTOR_AVISO);

@@ -28,9 +28,10 @@
  * Uso:  node vigia.mjs                     (fica rodando — é o que o Windows faz)
  *       node vigia.mjs --preparar-primeira (instalador: prepara a 1ª versão e sai)
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -62,6 +63,9 @@ const PRAZO = {
 };
 
 const SO_PREPARAR = process.argv.includes("--preparar-primeira");
+
+/** A identidade fixa do motor deste computador (ver src/motor/motor.ts). */
+const MOTOR_ID = `vigia-${os.hostname()}`;
 
 // --- log: um arquivo por dia, 14 dias -----------------------------------------
 
@@ -167,6 +171,26 @@ function matarArvore(pid) {
   }
 }
 
+/**
+ * O processo `pid` está vivo E é um motor nosso? Depois de o Windows
+ * reiniciar, o número antigo pode ter ido para outro programa — e esse não
+ * pode ser encerrado. Por isso confere a linha de comando, não só o número.
+ */
+function ehMotorVivo(pid) {
+  try {
+    process.kill(pid, 0);
+  } catch {
+    return false;
+  }
+  if (process.platform !== "win32") return false;
+  const r = spawnSync(
+    "powershell.exe",
+    ["-NoProfile", "-Command", `(Get-CimInstance Win32_Process -Filter 'ProcessId=${Number(pid)}').CommandLine`],
+    { encoding: "utf8", timeout: 30_000, windowsHide: true },
+  );
+  return (r.stdout ?? "").includes("src/motor/motor.ts");
+}
+
 const NPM_CLI = path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
 
 async function git(args, prazoMs = PRAZO.git) {
@@ -223,7 +247,7 @@ async function prepararVersao(sha) {
   ];
   for (const [nome, exe, args, prazoMs] of etapas) {
     info(`  · ${nome}...`);
-    const r = await rodar(exe, args, { cwd: dir, prazoMs, env: { ...process.env, LOG_PASTA: PASTA_LOGS } });
+    const r = await rodar(exe, args, { cwd: dir, prazoMs, env: { ...process.env, LOG_PASTA: PASTA_LOGS, MOTOR_VERSAO: curto(sha) } });
     if (r.codigo !== 0) {
       throw new Error(`não consegui ${nome} (código ${r.codigo}): ${r.saida.trim().slice(-800)}`);
     }
@@ -249,6 +273,7 @@ function ligarMotor(avisoParaRegistrar = "") {
   const env = {
     ...process.env,
     MOTOR_VERSAO: curto(estado.atual),
+    MOTOR_ID,
     LOG_PASTA: PASTA_LOGS,
     MOTOR_AVISO: avisoParaRegistrar,
   };
@@ -451,6 +476,14 @@ async function principal() {
   }
 
   info(`Vigia de pé (processo ${process.pid}). Ramo: ${process.env.SRR_RAMO}. Pasta: ${BASE}.`);
+  // Um motor que sobrou de um vigia anterior (que caiu sem desligá-lo) usa a
+  // mesma identidade: tem que sair antes de o novo ligar.
+  if (estado.motorPid && ehMotorVivo(estado.motorPid)) {
+    aviso(`Encerrando um motor que sobrou do vigia anterior (processo ${estado.motorPid}).`);
+    matarArvore(estado.motorPid);
+    await dormir(3000);
+  }
+  estado.motorPid = null;
   estado.vigiaPid = process.pid;
   salvarEstado();
 
