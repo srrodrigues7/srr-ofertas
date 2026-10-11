@@ -27,16 +27,29 @@ peça funcionando por vez, e só no fim ligar a estrutura (Vercel, GitHub, login
 computador dedicado). Por isso a ordem abaixo põe ofertas na tela o quanto
 antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 
-| #    | Etapa | Depende de | Estado |
-| ---- | ----- | ---------- | ------ |
-| O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | **fechando** (sem a parte de publicar) |
-| V1   | [Primeira vitrine](V1-primeira-vitrine.md) — Smiles e Melhores Destinos buscando, ofertas reais de BSB na tela | O0 | próxima |
-| V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | esperando |
-| V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | esperando |
-| V4   | Da oferta ao post — preço de venda, aprovar/descartar com revalidação, card e legenda | V2 | esperando |
-| V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | esperando |
-| L    | Ligar tudo — Vercel, GitHub, login, motor instalado no computador dedicado, alertas de saúde | quando o Saulo quiser | esperando |
-| R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | esperando |
+| #    | Etapa | Depende de | Esforço | Estado |
+| ---- | ----- | ---------- | ------- | ------ |
+| O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **fechando** (sem a parte de publicar) |
+| V1   | [Primeira vitrine](V1-primeira-vitrine.md) — Smiles e Melhores Destinos buscando, ofertas reais de BSB na tela, com custo e preço de venda | O0 | alto | próxima |
+| V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
+| V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
+| V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
+| V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
+| L    | Ligar tudo — Vercel, GitHub, login, motor instalado no computador dedicado, alertas de saúde | quando o Saulo quiser | xalto | esperando |
+| R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
+
+**Os níveis de esforço** (o mesmo critério do VoePro):
+
+| nível | quando |
+| ----- | ------ |
+| baixo | trabalho mecânico: trocar texto, cor, nome |
+| médio | construir parecido com o que já existe; a receita é conhecida |
+| alto | modelo de dados novo, regra nova, coisa que quebra torto se errar |
+| xalto | erro custa dado, dinheiro ou segurança, e não tem volta fácil |
+| máximo | só quando o alto já tentou e não deu conta |
+
+O L é **xalto** porque é onde o sistema sai do computador e fica exposto na
+internet com login — errar ali abre o sistema.
 
 ```
 O0 ─► V1 ─┬─► V2 ─► V4 ─► V5

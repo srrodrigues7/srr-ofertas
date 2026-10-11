@@ -65,15 +65,32 @@ A tela que o Saulo vai querer abrir todo dia:
 
 Ainda **sem nota, sem aprovação, sem card** — isso vem nas próximas etapas.
 
+### 5. Configuração (tudo editável na tela, nada fixo no código)
+
+Decisões do Saulo, já tomadas:
+
+- **Destinos:** uma tela onde o Saulo cadastra os destinos principais. Ele vai,
+  mais adiante, levantar na base de clientes quais são os preferidos — então a
+  lista muda, e quem muda é ele, na tela.
+- **Milhas viram reais.** Uma tela de valores com o **valor do milheiro por
+  programa** (Smiles, LATAM Pass, Azul Fidelidade…). Oferta em milhas mostra o
+  custo em reais: `milhas ÷ 1000 × valor do milheiro + taxas`. Assim milhas e
+  dinheiro ficam comparáveis na mesma lista.
+- **Preço de venda.** Na mesma tela, a **margem mínima** em percentual (ex.:
+  15%) e/ou em valor fixo (ex.: R$ 150). O sistema calcula o preço de venda a
+  partir do custo e mostra os dois (custo e venda) na vitrine.
+- **Horizonte de busca:** configurável, **pelo menos 8 meses**, com **mais
+  atenção aos primeiros meses** — os meses próximos são buscados com mais
+  frequência que os distantes. A frequência por faixa de meses também é
+  configuração.
+- **Ida e volta é a prioridade.** Só ida pode existir, mas não é o foco.
+
 ## Perguntas de negócio que esta etapa leva ao Saulo
 
-Com alternativas e recomendação (`00-contexto.md`, seção 1). No mínimo:
-
-1. **Quais destinos** saindo de BSB entram na primeira lista? E já entram
-   internacionais por GRU/GIG, ou depois?
-2. **Milhas aparecem na vitrine** junto com dinheiro, ou separado?
-3. **Quantos meses à frente** buscar?
-4. **Ida e volta, só ida, ou os dois?**
+Com alternativas e recomendação (`00-contexto.md`, seção 1). As perguntas
+gerais do projeto o Saulo já respondeu na bateria da sessão de controle (o que
+ficou decidido está no `README.md`); pergunte só o que for específico desta
+etapa e ainda estiver em aberto.
 
 ## Regras desta etapa
 
