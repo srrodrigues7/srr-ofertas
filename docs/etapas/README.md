@@ -30,7 +30,8 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | #    | Etapa | Depende de | Esforço | Estado |
 | ---- | ----- | ---------- | ------- | ------ |
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
-| V1   | [Primeira vitrine](V1-primeira-vitrine.md) — Smiles e Melhores Destinos buscando, ofertas reais de BSB na tela, com custo e preço de venda | O0 | alto | próxima |
+| V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aberta** |
+| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aberta** |
 | V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
@@ -65,7 +66,8 @@ que investigar em cada fonte.
 
 - **O0** deixa a casa de pé no computador: projeto, schema `ofertas`, motor e
   tela de Saúde.
-- **V1** põe ofertas reais na tela, das duas fontes que já se sabe acessar.
+- **V1a** põe passagens reais na tela (Smiles e Melhores Destinos) e cria o molde de oferta.
+- **V1b** põe pacotes reais na mesma tela (Cativa e Hoteldo).
 - **V2** diz quais delas são extraordinárias, e por quê.
 - **V3.x** traz cada fonte nova, uma de cada vez.
 - **V4** transforma a oferta aprovada em post pronto.
@@ -97,6 +99,44 @@ que investigar em cada fonte.
   só passagem.
 - **Next.js do VoePro** (16.3.4 tem alerta de segurança; aqui usamos 16.3.8):
   atualizar **antes do VoePro ir para o ar**, não agora.
+- **Réguas de preço bom:** cada régua tem **dois degraus, "boa" e
+  "imperdível"**, e as imperdíveis ganham **destaque** no painel e no Telegram.
+  A tela é de seleção rápida: o Saulo digita "América do Sul", escolhe na lista
+  (fica como um botão selecionado), clica em "Aéreo", e informa a faixa. Vale
+  para região, país ou cidade ("Argentina · Aéreo", "Buenos Aires · Aéreo",
+  "Santiago · Pacote"). A mais específica vence. **Preço fechado por pessoa**,
+  não por diária.
+- **Preferências de voo entram na nota** (V2), configuráveis: horários que
+  ninguém quer (ex.: madrugada) perdem pontos; direto ganha de conexão. O Saulo
+  aceita simplificar se for preciso — o que importa é gerar resultado.
+- **Pacotes já na primeira vitrine.** Fontes, nesta ordem: **Cativa e
+  Hoteldo** (as operadoras com que mais trabalham), depois **Pátria** (parceria
+  começando) e **Azul Viagens** (têm cadastro).
+- **Operadoras: explorar todos os caminhos** — páginas abertas de ofertas (sem
+  login), busca por requisição, e **login automático** com as credenciais do
+  Saulo (ele coloca na configuração; código de verificação pode ser lido do
+  e-mail conectado da agência).
+- **Login em programa de milhas** (se a Smiles ou outro exigir): deixar pronto
+  um lugar na configuração para o Saulo inserir a conta de acesso. Ele acha que
+  não vai precisar.
+- **Datas na mensagem do grupo: mês e janela** ("março, várias datas a partir
+  de R$ X"), só quando houver um mínimo configurável de datas naquele preço.
+- **Duas visões:** a da equipe mostra tudo, inclusive **de onde veio** a oferta;
+  a mensagem do grupo **não mostra a fonte**, mas **mostra a companhia aérea**.
+- **Margem só em milhas.** Oferta de consolidadora ou operadora já tem a RAV
+  embutida — o preço dela é o de venda. Em milhas: **uma margem por tipo**
+  (nacional, internacional, executiva, pacote…), cada uma com **percentual e
+  valor mínimo em reais; vale o maior dos dois**.
+- **Milheiro:** o Saulo informa o preço de cada programa e o sistema faz a
+  conta (milhas ÷ 1000 × preço + taxas). Sem mais distinções.
+- **Parcelamento:** destacar as parcelas — é o que o cliente olha. Oferta de
+  operadora/consolidadora: mostrar as **parcelas sem juros que a fonte
+  oferece**. Oferta em milhas (cobrada por link de pagamento): **tabela
+  configurável de taxa por número de parcelas**, e o sistema calcula a parcela.
+- **Internacional por GRU/GIG:** a mensagem diz só **"saindo de São Paulo"**
+  (ou Rio).
+- **Classes: econômica e executiva.**
+- **Curadoria trabalha no computador** — o painel é desenhado para tela grande.
 
 ---
 
