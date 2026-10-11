@@ -1,0 +1,112 @@
+// SRR Ofertas (o Radar de Ofertas) — schema `ofertas`
+// Mora no mesmo Postgres do MilesPro (schema `public`) e do VoePro (`crm`).
+// O datasource declara apenas ["ofertas"]: o Prisma não emite DDL fora dele.
+// Além disso, o radar entra no banco com o papel `srr_ofertas`, dono só deste
+// schema (scripts/preparar-banco.mjs) — se um erro tentar mexer fora daqui, o
+// próprio banco recusa.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["ofertas"]
+}
+
+/// A trava do motor: uma linha só (id "motor").
+///
+/// Só um motor trabalha por vez. Quem está com a trava escreve até quando ela
+/// vale (`travadoAte`) e renova a cada batimento. Se o motor morrer, o prazo
+/// vence e o próximo assume — não depende de ninguém soltar nada. Toda conta de
+/// prazo usa o relógio do banco (`now()`), nunca o do computador: dois
+/// computadores com relógios diferentes não podem discordar sobre quem manda.
+model MotorTrava {
+  id          String    @id @default("motor")
+  /// A instância que está com a trava (o `id` de `motor_instancia`).
+  dono        String?
+  maquina     String?
+  versao      String?
+  travadoAte  DateTime? @map("travado_ate") @db.Timestamptz(6)
+  /// O último "estou vivo" de quem está com a trava. É o que a tela de Saúde lê.
+  batimentoEm DateTime? @map("batimento_em") @db.Timestamptz(6)
+  /// Desde quando o dono atual está com a trava.
+  assumiuEm   DateTime? @map("assumiu_em") @db.Timestamptz(6)
+  /// Contador global de passadas: sobe 1 a cada passada, de qualquer motor.
+  passadaN    Int       @default(0) @map("passada_n")
+
+  @@map("motor_trava")
+  @@schema("ofertas")
+}
+
+/// Cada motor que já subiu. Serve para ver, na Saúde, quem está trabalhando e
+/// quem está esperando — e para provar que dois motores ligados não trabalham
+/// ao mesmo tempo.
+model MotorInstancia {
+  /// Sorteado a cada vez que o processo sobe.
+  id        String   @id
+  maquina   String
+  pid       Int
+  versao    String
+  iniciouEm DateTime @default(now()) @map("iniciou_em") @db.Timestamptz(6)
+  vistoEm   DateTime @default(now()) @map("visto_em") @db.Timestamptz(6)
+  /// trabalhando · esperando · parou
+  estado    String
+
+  @@index([vistoEm])
+  @@map("motor_instancia")
+  @@schema("ofertas")
+}
+
+/// O registro de cada passada: começou, terminou, deu erro, quanto tempo.
+model Passada {
+  id          BigInt    @id @default(autoincrement())
+  /// O número global da passada (o `passadaN` da trava naquele momento).
+  numero      Int
+  instanciaId String    @map("instancia_id")
+  maquina     String
+  versao      String
+  comecouEm   DateTime  @default(now()) @map("comecou_em") @db.Timestamptz(6)
+  terminouEm  DateTime? @map("terminou_em") @db.Timestamptz(6)
+  duracaoMs   Int?      @map("duracao_ms")
+  /// rodando · ok · erro
+  status      String
+  resumo      String?
+  erro        String?
+
+  @@index([comecouEm])
+  @@map("passada")
+  @@schema("ofertas")
+}
+
+/// Acontecimentos do motor que alguém pode querer explicar depois: subiu,
+/// assumiu a trava, perdeu a trava, atualizou de versão, voltou para a versão
+/// anterior, parou por falta de configuração.
+model MotorEvento {
+  id       BigInt   @id @default(autoincrement())
+  em       DateTime @default(now()) @db.Timestamptz(6)
+  maquina  String
+  versao   String?
+  tipo     String
+  mensagem String
+
+  @@index([em])
+  @@map("motor_evento")
+  @@schema("ofertas")
+}
+
+/// Configuração que o Saulo muda sem deploy. Chave e valor.
+///
+/// Não existe valor padrão escrito no código: se uma chave obrigatória faltar,
+/// o motor para e diz qual é (a lição 5 do Radar da HUB 92).
+model Configuracao {
+  chave        String   @id
+  valor        Json
+  /// O que essa chave controla, em português, para quem for editar.
+  descricao    String
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("configuracao")
+  @@schema("ofertas")
+}

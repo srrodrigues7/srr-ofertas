@@ -1,0 +1,5 @@
+# Os arquivos do Windows precisam de CRLF; o resto, LF no repositório.
+* text=auto
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
