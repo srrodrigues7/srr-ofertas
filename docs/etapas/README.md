@@ -22,47 +22,43 @@ entre si podem correr em paralelo, cada uma na sua sessão.
 
 ## Quadro
 
+**O jeito do Saulo trabalhar:** ver o sistema achando oferta primeiro, uma
+peça funcionando por vez, e só no fim ligar a estrutura (Vercel, GitHub, login,
+computador dedicado). Por isso a ordem abaixo põe ofertas na tela o quanto
+antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
+
 | #    | Etapa | Depende de | Estado |
 | ---- | ----- | ---------- | ------ |
-| O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor de pé, painel no ar | — | **aberta** |
-| O1   | [Raio-x das fontes](O1-raio-x-das-fontes.md) — uma ficha por fonte, com prova de captura | — | **aberta** |
-| O2   | Formato da oferta e coletor — o molde único, o agendador, o histórico, Smiles e Melhores Destinos rodando | O0, O1 | esperando |
-| O3.x | Um conector por fonte (em paralelo, uma sessão por fonte) | O2 | esperando |
-| O4   | Preço normal da rota — o normal de cada rota em cada mês (sazonalidade) | O2 | esperando |
-| O5   | Motor de inteligência — nota 0–100, motivo, filtros, falsa promoção, ranking | O4 | esperando |
-| O6   | Preço de venda — margem, milheiro, parcelamento, taxas | O2 | esperando |
-| O7   | Painel de curadoria — lista pela nota, aprovar/descartar, revalidação na aprovação | O5, O6 | esperando |
-| O8   | Card e legenda — arte e texto prontos para postar, código de rastreio | O7 | esperando |
-| O9   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | O7 | esperando |
-| O10  | Saúde do sistema — produção por fonte, erros, alertas | O3 | esperando |
-| O11  | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | esperando |
+| O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | **fechando** (sem a parte de publicar) |
+| V1   | [Primeira vitrine](V1-primeira-vitrine.md) — Smiles e Melhores Destinos buscando, ofertas reais de BSB na tela | O0 | próxima |
+| V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | esperando |
+| V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | esperando |
+| V4   | Da oferta ao post — preço de venda, aprovar/descartar com revalidação, card e legenda | V2 | esperando |
+| V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | esperando |
+| L    | Ligar tudo — Vercel, GitHub, login, motor instalado no computador dedicado, alertas de saúde | quando o Saulo quiser | esperando |
+| R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | esperando |
 
 ```
-O0 ─┐
-    ├─► O2 ─┬─► O3.x ─► O10
-O1 ─┘       ├─► O4 ─► O5 ─┐
-            └─► O6 ───────┴─► O7 ─┬─► O8
-                                  └─► O9
+O0 ─► V1 ─┬─► V2 ─► V4 ─► V5
+          └─► V3.x (uma fonte por vez, enquanto o resto anda)
+                                        L  (quando o Saulo decidir)
 ```
+
+O [O1-raio-x-das-fontes.md](O1-raio-x-das-fontes.md) deixou de ser etapa: o
+raio-x agora acontece dentro de cada V1/V3.x, e aquele arquivo é o checklist do
+que investigar em cada fonte.
 
 ## O escopo de cada uma, em uma frase
 
-- **O0** deixa a casa de pé: o projeto, o schema `ofertas`, o motor rodando no
-  computador dedicado e se religando sozinho, o painel publicado com login, e a
-  prova de que os três conversam.
-- **O1** descobre, fonte por fonte, o melhor jeito de buscar preço, o que cada
-  uma entrega e o risco — e prova com um teste que funciona.
-- **O2** define o formato único de oferta e o coletor que vai às fontes no
-  ritmo certo e guarda tudo.
-- **O3.x** encaixa cada fonte nova no formato.
-- **O4** calcula o preço normal de cada rota em cada mês.
-- **O5** dá a nota e escolhe as melhores.
-- **O6** calcula por quanto vender.
-- **O7** é onde a pessoa da curadoria trabalha.
-- **O8** gera o que vai ser postado.
-- **O9** avisa no celular.
-- **O10** avisa quando algo para.
-- **O11** fecha o ciclo com o que vendeu.
+- **O0** deixa a casa de pé no computador: projeto, schema `ofertas`, motor e
+  tela de Saúde.
+- **V1** põe ofertas reais na tela, das duas fontes que já se sabe acessar.
+- **V2** diz quais delas são extraordinárias, e por quê.
+- **V3.x** traz cada fonte nova, uma de cada vez.
+- **V4** transforma a oferta aprovada em post pronto.
+- **V5** avisa no celular.
+- **L** publica e instala tudo para rodar sozinho.
+- **R** fecha o ciclo com o que vendeu.
 
 ## Decisões do Saulo já tomadas
 
