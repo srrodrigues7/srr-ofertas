@@ -97,7 +97,10 @@ process.on("SIGTERM", () => pedirParada("pedido do sistema"));
 process.on("SIGBREAK", () => pedirParada("pedido do Windows"));
 if (process.send) {
   // Ligado pelo vigia: ele pede para parar por mensagem (no Windows não há
-  // sinal de "pare com calma"). Se o vigia sumir, o motor não fica órfão.
+  // sinal de "pare com calma"). Se o vigia for encerrado à força, no Windows
+  // o próprio sistema encerra o motor junto (o Node põe os filhos numa "caixa"
+  // que morre com o pai) — não sobra motor órfão. O "disconnect" cobre os
+  // outros sistemas.
   process.on("message", (m: unknown) => {
     if ((m as { tipo?: string })?.tipo === "parar") pedirParada("o vigia pediu");
   });
@@ -155,6 +158,14 @@ async function principal(): Promise<number> {
     update: { maquina: eu.maquina, pid: eu.pid, versao: eu.versao, estado: "esperando", iniciouEm: new Date() },
   });
   await evento("subiu", `Motor subiu (processo ${eu.pid}).`);
+  // Uma passada que este motor (mesma identidade) deixou pela metade ao cair
+  // não fica "rodando" para sempre no registro.
+  const interrompidas = await prisma.$executeRaw`
+    UPDATE "ofertas"."passada"
+       SET status = 'erro', terminou_em = now(),
+           erro = 'Interrompida: o motor caiu ou foi desligado no meio desta passada.'
+     WHERE instancia_id = ${eu.id} AND status = 'rodando'`;
+  if (interrompidas) log.aviso(`${interrompidas} passada(s) deixada(s) pela metade marcada(s) como interrompida(s).`);
   if (process.env.MOTOR_AVISO) await evento("aviso_do_vigia", process.env.MOTOR_AVISO);
 
   // --- batimento: renova a trava e diz "estou vivo", independente da passada.
