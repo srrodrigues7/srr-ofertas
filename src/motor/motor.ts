@@ -70,6 +70,8 @@ const eu: Instancia = {
 // --- desligar com educação ---------------------------------------------------
 
 let parando = false;
+/** Já passou da subida (estava trabalhando ou esperando a vez)? Muda só a frase do erro. */
+let subiu = false;
 let acordar: (() => void) | null = null;
 
 function pedirParada(motivo: string) {
@@ -158,6 +160,7 @@ async function principal(): Promise<number> {
     update: { maquina: eu.maquina, pid: eu.pid, versao: eu.versao, estado: "esperando", iniciouEm: new Date() },
   });
   await evento("subiu", `Motor subiu (processo ${eu.pid}).`);
+  subiu = true;
   // Uma passada que este motor (mesma identidade) deixou pela metade ao cair
   // não fica "rodando" para sempre no registro.
   const interrompidas = await prisma.$executeRaw`
@@ -306,7 +309,7 @@ principal().then(
   (codigo) => process.exit(codigo),
   (e) => {
     if (e instanceof ErroDeConfiguracao) {
-      log.erro(`O motor NÃO subiu. ${e.message}`);
+      log.erro(`${subiu ? "O motor PAROU." : "O motor NÃO subiu."} ${e.message}`);
       process.exit(SAIDA_CONFIGURACAO);
     }
     if (parando) {
