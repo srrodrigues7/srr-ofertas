@@ -37,6 +37,10 @@ const fmtHora = new Intl.DateTimeFormat("pt-BR", {
 
 export function criarLog(pasta: string, prefixo: string): Log {
   mkdirSync(pasta, { recursive: true });
+  // Cano da tela quebrado (o vigia morreu) chega como erro assíncrono; sem
+  // estes ouvintes ele derrubaria o processo antes de soltar a trava.
+  process.stdout.on("error", () => {});
+  process.stderr.on("error", () => {});
   let diaAtual = "";
   let arquivo = "";
   let estourou = false;
@@ -64,8 +68,17 @@ export function criarLog(pasta: string, prefixo: string): Log {
       limparVelhos();
     }
     const linha = `${fmtHora.format(agora)} ${nivel.padEnd(5)} ${msg}\n`;
-    // No terminal, para quem estiver rodando à mão.
-    (nivel === "ERRO" ? process.stderr : process.stdout).write(linha);
+    gravarNoArquivo(agora, linha);
+    // Na tela, para quem estiver rodando à mão. Vem DEPOIS do arquivo e nunca
+    // derruba nada: quando o vigia morre, a "tela" do motor deixa de existir.
+    try {
+      (nivel === "ERRO" ? process.stderr : process.stdout).write(linha);
+    } catch {
+      // sem tela: o arquivo já tem a linha
+    }
+  }
+
+  function gravarNoArquivo(agora: Date, linha: string) {
     if (estourou) return;
     try {
       let tamanho = 0;

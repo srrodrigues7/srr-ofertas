@@ -83,11 +83,16 @@ const fmtHora = new Intl.DateTimeFormat("pt-BR", {
   hour12: false,
 });
 let diaDoLog = "";
+process.stdout.on("error", () => {});
 
 function log(nivel, msg) {
   const agora = new Date();
   const linha = `${fmtHora.format(agora)} ${nivel.padEnd(5)} ${msg}\n`;
-  process.stdout.write(linha);
+  try {
+    process.stdout.write(linha);
+  } catch {
+    // sem tela (rodando escondido): o arquivo basta
+  }
   try {
     fs.mkdirSync(PASTA_LOGS, { recursive: true });
     const dia = fmtDia.format(agora);
