@@ -8,6 +8,14 @@ andamento, em [docs/etapas/README.md](docs/etapas/README.md).
 
 ## O desenho
 
+> **Hoje (fim da etapa O0) tudo roda só no computador de desenvolvimento**,
+> contra o banco de testes: `npm run dev` + `npm run motor`. A Vercel, o
+> GitHub e o computador dedicado estão desenhados e com o código pronto, mas
+> **ainda não foram ligados** — o Saulo decidiu ver o sistema encontrando
+> ofertas antes. O que falta está em
+> [docs/etapas/README.md](docs/etapas/README.md), "Deixado para a etapa de
+> ligar tudo".
+
 ```
   computador dedicado (Windows, na agência, sempre ligado)
   ┌─────────────────────────────────────────────────────┐
