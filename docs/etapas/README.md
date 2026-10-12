@@ -152,6 +152,21 @@ de busca** — destino, janela de datas, pessoas, classe, preço-alvo opcional e
 **quem pediu** (hoje sempre a agência) — e não uma lista fixa de destinos. Assim
 a ideia vira uma etapa nova sem refazer o coletor.
 
+**Ofertas personalizadas por gosto do cliente.** Muitos clientes têm gosto
+fixo — por exemplo, os que adoram resort e querem oferta o ano inteiro. O
+consultor registra o **perfil de gosto** (tipo de viagem, regime, regiões,
+épocas, quem viaja); o motor **cruza cada oferta encontrada com os perfis** e
+avisa "isto combina com estes clientes", para o consultor mandar uma mensagem
+pessoal. É o pedido de busca permanente. O perfil mora no VoePro (etiquetas do
+cliente, etapa 12 — Relacionamento); a entrega por mensagem depende da etapa 9
+do VoePro (WhatsApp). O Saulo confirmou: **é para buscar isso também.**
+
+**O que isso exige desde já (V1a e V1b):** cada oferta guarda as
+**características que permitem casar com um gosto** — tipo (passagem/pacote),
+regime (all inclusive, café…), região/país/cidade, praia ou cidade, categoria
+do hotel, se aceita criança, classe — de forma consultável (campos ou
+etiquetas), não só como texto de descrição.
+
 ---
 
 ## O que cada etapa deixou pronto
