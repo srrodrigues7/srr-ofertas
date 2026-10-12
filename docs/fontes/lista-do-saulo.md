@@ -1,0 +1,20 @@
+# A lista de fontes do Saulo
+
+Enviada pelo Saulo em 11/10/2026. É a matéria-prima das etapas V1b e V3.x.
+
+| fornecedor | link | o que parece ser | etapa |
+|---|---|---|---|
+| **Cativa** | https://linktr.ee/cativaoperadora | página de links oficial da Cativa | V1b |
+| **Cativa** | https://viajandocomdesconto.com/ | catálogo aberto (pacotes + bloqueios); **a Cativa passou o link ao Saulo — é canal deles** | V1b |
+| **Cativa** | https://www.cativaoperadora.com.br/divulgacao/srr-viagens?Embarque=DF | **página de divulgação personalizada da SRR**, filtrada por embarque no DF | V1b |
+| **Cativa** | https://reservas.cativaoperadora.com.br/infotravel/ | portal do agente (Infotravel), com login | V1b (parte B) |
+| **Hoteldo** | https://ag00057124-hoteldo.e-agencias.com/ | **endereço próprio da agência** na plataforma e-agencias (Despegar) | V1b |
+| **Pátria** | https://portal.patria.tur.br/ | portal da operadora (parceria começando) | V3.x |
+| **Azul Viagens** | https://www.azulviagens.com.br/ | site da operadora da Azul (a SRR tem cadastro) | V3.x |
+| **Expedia TAAP** | https://www.expediataap.com.br/ | programa de agentes da Expedia (Travel Agent Affiliate Program) | V3.x |
+
+Já em andamento na V1a: **Smiles** e **Melhores Destinos**.
+
+Ordem sugerida para a V3.x, depois da primeira vitrine: Azul Viagens (cadastro
+pronto e marca forte em BSB), Expedia TAAP (programa de afiliados costuma ter
+caminho oficial de integração), Pátria (parceria nova).
