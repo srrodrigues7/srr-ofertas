@@ -31,7 +31,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | ---- | ----- | ---------- | ------- | ------ |
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **entregue — esperando revisão** (só no computador) |
-| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aberta** |
+| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aberta** — fase 1 parte A (sem login) entregue; parte B (login) espera o Saulo |
 | V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
@@ -137,6 +137,35 @@ que investigar em cada fonte.
   (ou Rio).
 - **Classes: econômica e executiva.**
 - **Curadoria trabalha no computador** — o painel é desenhado para tela grande.
+
+## No radar — ideias do Saulo para depois
+
+**Busca para o cliente (o motor a serviço do consultor).** O cliente chega com
+um pedido ("Lisboa em março, casal, até R$ 8 mil"); o consultor registra o
+pedido e o motor (a) busca na hora em todas as fontes e devolve as melhores
+opções, e (b) se não houver nada bom, **fica vigiando** e avisa o consultor
+quando aparecer um preço dentro do que o cliente quer. Com o VoePro no ar, o
+pedido nasce do negócio no funil e o alerta vira tarefa no card.
+
+**O que isso exige desde já (V1a):** o "o que buscar" é uma **lista de pedidos
+de busca** — destino, janela de datas, pessoas, classe, preço-alvo opcional e
+**quem pediu** (hoje sempre a agência) — e não uma lista fixa de destinos. Assim
+a ideia vira uma etapa nova sem refazer o coletor.
+
+**Ofertas personalizadas por gosto do cliente.** Muitos clientes têm gosto
+fixo — por exemplo, os que adoram resort e querem oferta o ano inteiro. O
+consultor registra o **perfil de gosto** (tipo de viagem, regime, regiões,
+épocas, quem viaja); o motor **cruza cada oferta encontrada com os perfis** e
+avisa "isto combina com estes clientes", para o consultor mandar uma mensagem
+pessoal. É o pedido de busca permanente. O perfil mora no VoePro (etiquetas do
+cliente, etapa 12 — Relacionamento); a entrega por mensagem depende da etapa 9
+do VoePro (WhatsApp). O Saulo confirmou: **é para buscar isso também.**
+
+**O que isso exige desde já (V1a e V1b):** cada oferta guarda as
+**características que permitem casar com um gosto** — tipo (passagem/pacote),
+regime (all inclusive, café…), região/país/cidade, praia ou cidade, categoria
+do hotel, se aceita criança, classe — de forma consultável (campos ou
+etiquetas), não só como texto de descrição.
 
 ---
 
@@ -389,3 +418,49 @@ Requisição sempre por `pedirJson` (prazo, contagem, "bloqueado" em 403/406/429
 - **Produção:** a migração `vitrine` ainda não foi aplicada lá.
 - **Falta o Saulo preencher o milheiro Smiles** (Valores): sem ele, as ofertas
   em milhas aparecem com "falta preço do milheiro" e vão para o fim da lista.
+
+### V1b — Pacotes, fase 1 parte A: investigar sem login (11/10/2026)
+
+**Decisões do Saulo:** primeiro todos os caminhos **sem login**; o login vem
+depois (parte B). Na Hoteldo a SRR compra o **pacote aéreo + hotel montado
+lá**. Na Cativa, trazer **pacotes e bloqueios aéreos** (o bloqueio entra como
+**passagem** no molde da V1a). Destinos de teste: **resorts do Nordeste**.
+
+**O que se achou** (fichas em [`docs/fontes/cativa.md`](../fontes/cativa.md) e
+[`docs/fontes/hoteldo.md`](../fontes/hoteldo.md)):
+
+- **Cativa — construir já**, pelo site aberto **viajandocomdesconto.com** (o
+  link que o Saulo trouxe). Uma página estática de 5 MB traz em JSON **todos**
+  os pacotes (467; cada saída com até 3 hotéis, regime, preço **por pessoa em
+  quarto duplo**, taxa, **10x sem juros**) e **todos os bloqueios aéreos**
+  (10.871 ida-e-volta reais, com assentos, companhia, horários e prazo de
+  emissão). Sem login, sem anti-robô. De BSB para o Nordeste hoje: 127
+  opções de pacote (14 all inclusive) e 782 bloqueios. O preço é o público,
+  de venda (RAV embutida — confirmar na parte B) e pode ter semanas: **a
+  revalidação na aprovação precisa do portal logado ou da API**.
+- **Hoteldo — nada sem login.** É a rede B2B da Despegar; o site recusa
+  programas (403 + "verificação do dispositivo") e o `robots.txt` proíbe
+  robôs em pacotes/hotéis. Caminho recomendado: **API oficial (XML)**. Robô no
+  login é arriscado (a Despegar barra programas).
+- **Textos de pedido de API** prontos nas duas fichas, para o Saulo mandar.
+
+**Provas** (rodam direto no Node 24, sem instalar nada, sem banco):
+`node scripts/provas/cativa-vitrine.ts` (opções `--origem`, `--regiao
+todas`, `--tipo pacotes|bloqueios`, `--so-ai`, `--json`) e
+`node scripts/provas/hoteldo-aberto.ts`.
+
+**Para a parte B e a fase 2 saberem**
+
+- O bloqueio da Cativa é um ida-e-volta de verdade, com preço por data:
+  serve de **calendário** para o preço normal (V2) nas rotas onde há
+  bloqueio. O pacote tem **uma** data com preço + "outras datas" sem preço.
+- Pacote = pacote × saída × **hotel** (o preço é por hotel). O molde da V1a
+  precisa caber: hotel, regime, noites, preço por pessoa em quarto duplo,
+  taxa, parcelas da fonte, o que inclui, "cotado em", política de criança.
+- O conector deve perguntar "mudou?" (`ETag`) em vez de baixar 5 MB toda
+  vez, e avisar na Saúde se a página parar de ser republicada.
+- Características de gosto do cliente (pedido da sessão de controle): a
+  Cativa dá regime e criança grátis por hotel; **não** dá estrelas nem tipo
+  de quarto (só duplo). Tabela completa na ficha.
+- Ainda **não** existe `docs/fontes/README.md` (resumo de todas as fontes):
+  a V1a também investiga fontes; quem juntar faz o resumo, para não colidir.
