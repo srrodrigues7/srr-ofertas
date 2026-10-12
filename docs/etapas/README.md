@@ -371,6 +371,7 @@ fonte entrega `OfertaNova` (`src/lib/coleta/molde.ts`) e grava por
 | voo | `classe`, `companhias[]`, `companhia_nome`, `bagagem` (+ qtd); ida/volta: saída, chegada (hora local do aeroporto, `timestamp` sem fuso), paradas, duração, voos; `assentos` | o que a fonte não der fica `null` |
 | **pacote** | `hotel_nome`, `hotel_categoria`, `regime` (all_inclusive · pensao_completa · meia_pensao · cafe · sem_refeicao), `adultos`, `criancas`, `aceita_crianca`, `estilo` | **a V1b preenche aqui**; `tipo = 'pacote'`, `composicao = 'ida_volta'` |
 | gosto do cliente | `etiquetas[]` (índice GIN): direto, bagagem, executiva, milhas, internacional, o regime, o estilo | `etiquetasDeduzidas()` acrescenta as óbvias; a fonte pode pôr outras (palavras fixas) |
+| conferência (revalidação) | `conferida_em`, `conferencia_resultado` (ok · mudou · esgotou · nao_deu), `conferencia_anterior`, `conferencia_valor`, `conferencia_variacao` (%), `conferencia_motivo`, `localizador` (JSON para achar a mesma oferta de novo na fonte), `emitir_ate` | grave só por `registrarConferencia()` (`gravar.ts`): esgotou → sai da vitrine; mudou → atualiza o preço e marca a variação; não deu → sem selo. `podeSerAprovada()` só aceita ok/mudou (a V4 usa). Se a coleta vê preço diferente, o selo antigo cai. Migração `…_conferencia` (só no banco de testes) |
 | vida | `vista_primeira_em`, `vista_em`, `detalhada_em`, `ativa`, `fornecedor`, `link`, `dados_fonte` | `desativarAusentes()` tira da vitrine o que a fonte, buscada de novo, não mostrou; a faxina tira o que passou de `ofertas.validade_horas` |
 
 **Preço** (`src/lib/ofertas/preco.ts`, `precificar()` — use sempre esta):
@@ -385,6 +386,10 @@ juros" pela tabela). Faltou valor → `faltas[]`, e a tela diz o quê.
 - Fonte em `ofertas.fonte` (migração): `tipo = 'operadora'`,
   `aplica_margem = false` (RAV embutida → o preço é a venda); `parcelas_fonte`
   em cada oferta.
+- **Bloqueio aéreo da Cativa entra como PASSAGEM**: `tipo = 'passagem'`,
+  `composicao = 'ida_volta'`, `assentos`, `emitir_ate`, voos em
+  `ida_voos`/`volta_voos`, e o `localizador` com o voo. Pacote: `localizador`
+  com código do pacote, origem, destino, datas e hotel.
 - Conector em `src/lib/coleta/fontes/`; tarefas no padrão de `passagens.ts` (ou
   num `pacotes.ts` irmão sobre `nucleo.ts`), chamado pelo motor ao lado de
   `coletarPassagens`. Escopos próprios (`pac:…`).

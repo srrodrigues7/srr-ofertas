@@ -367,6 +367,25 @@ model Oferta {
   voltaVoos       String?   @map("volta_voos")
   /// O menor número de assentos restantes entre os trechos (as fontes param em 9).
   assentos        Int?
+  /// Prazo para emitir (bloqueio aéreo de operadora, por exemplo).
+  emitirAte       DateTime? @map("emitir_ate") @db.Timestamptz(6)
+
+  /// CONFERÊNCIA (revalidação na fonte, antes de aprovar). Regra do Saulo:
+  /// esgotou sai da vitrine; preço mudou atualiza e marca; não conferida não
+  /// pode ser aprovada. Grava-se por `registrarConferencia` (coleta/gravar.ts).
+  conferidaEm          DateTime? @map("conferida_em") @db.Timestamptz(6)
+  /// ok · mudou · esgotou · nao_deu
+  conferenciaResultado String?   @map("conferencia_resultado")
+  /// O preço antes e o conferido, na unidade da oferta (milhas ou R$).
+  conferenciaAnterior  Decimal?  @map("conferencia_anterior") @db.Decimal(14, 2)
+  conferenciaValor     Decimal?  @map("conferencia_valor") @db.Decimal(14, 2)
+  /// Variação em % (conferido ÷ anterior − 1).
+  conferenciaVariacao  Decimal?  @map("conferencia_variacao") @db.Decimal(7, 2)
+  /// Por que não deu para conferir ("Cativa fora do ar").
+  conferenciaMotivo    String?   @map("conferencia_motivo")
+  /// Como achar a MESMA oferta de novo na fonte: pacote = código do pacote,
+  /// origem, destino, datas, hotel; bloqueio = voo; Smiles = uids do voo.
+  localizador          Json?
 
   /// Pacote: hotel, categoria (estrelas), regime, ocupação.
   hotelNome      String?  @map("hotel_nome")

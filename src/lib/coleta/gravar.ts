@@ -78,6 +78,8 @@ function dadosDaOferta(o: OfertaNova, coletaId: bigint | null) {
     voltaDuracaoMin: o.voltaDuracaoMin ?? null,
     voltaVoos: o.voltaVoos ?? null,
     assentos: o.assentos ?? null,
+    emitirAte: o.emitirAte ? new Date(o.emitirAte) : null,
+    localizador: o.localizador ? (o.localizador as Prisma.InputJsonValue) : Prisma.DbNull,
     hotelNome: o.hotelNome ?? null,
     hotelCategoria: o.hotelCategoria ?? null,
     regime: o.regime ?? null,
@@ -137,10 +139,17 @@ export async function gravarOfertas(ofertas: OfertaNova[], coletaId: bigint | nu
       });
     }
     const dados = dadosDaOferta(o, coletaId);
+    // Preço diferente do que estava = a conferência antiga não vale mais.
+    const precoMudou =
+      antes && (antes.milhas !== (o.milhas ?? null) || (antes.precoBrl?.toNumber() ?? null) !== (o.precoBrl ?? null));
     return prisma.oferta.upsert({
       where: { chave },
       create: { chave, ...dados },
-      update: antes?.detalhe === "voo" && o.detalhe !== "voo" ? { ...dados, detalhadaEm: null } : dados,
+      update: {
+        ...dados,
+        ...(antes?.detalhe === "voo" && o.detalhe !== "voo" ? { detalhadaEm: null } : {}),
+        ...(precoMudou ? { conferidaEm: null, conferenciaResultado: null } : {}),
+      },
     });
   });
   // Em lotes, para não segurar uma transação enorme.
@@ -223,6 +232,47 @@ export async function gravarPrecos(precos: PrecoNovo[]): Promise<number> {
         ultima_em = now()`;
   }
   return itens.length;
+}
+
+export type ResultadoConferencia = "ok" | "mudou" | "esgotou" | "nao_deu";
+
+/**
+ * Registra a conferência de uma oferta na fonte (o revalidador da V1b/V4
+ * chama isto). Regra do Saulo: esgotou sai da vitrine; preço mudou atualiza o
+ * preço e marca a variação; não deu para conferir fica como estava, sem selo
+ * — e oferta sem selo não pode ser aprovada (`podeSerAprovada`).
+ * `valor` é o preço conferido na unidade da oferta (milhas, se é em milhas; senão R$).
+ */
+export async function registrarConferencia(
+  ofertaId: bigint,
+  r: { resultado: ResultadoConferencia; valor?: number | null; motivo?: string | null },
+): Promise<void> {
+  const o = await prisma.oferta.findUniqueOrThrow({ where: { id: ofertaId }, select: { milhas: true, precoBrl: true } });
+  const emMilhas = o.milhas != null;
+  const anterior = emMilhas ? o.milhas : (o.precoBrl?.toNumber() ?? null);
+  const valor = r.valor ?? null;
+  const resultado: ResultadoConferencia =
+    r.resultado === "ok" && valor != null && anterior != null && valor !== anterior ? "mudou" : r.resultado;
+  const variacao = valor != null && anterior ? Math.round((valor / anterior - 1) * 10_000) / 100 : null;
+  await prisma.oferta.update({
+    where: { id: ofertaId },
+    data: {
+      conferenciaResultado: resultado,
+      conferenciaMotivo: r.motivo ?? null,
+      conferenciaAnterior: anterior,
+      conferenciaValor: valor,
+      conferenciaVariacao: variacao,
+      // "Não deu" não ganha selo: continua sem poder ser aprovada.
+      conferidaEm: resultado === "nao_deu" ? null : new Date(),
+      ...(resultado === "esgotou" ? { ativa: false } : {}),
+      ...(resultado === "mudou" && valor != null ? (emMilhas ? { milhas: Math.round(valor) } : { precoBrl: valor }) : {}),
+    },
+  });
+}
+
+/** Só oferta conferida (ok ou com o preço já atualizado) pode ser aprovada. */
+export function podeSerAprovada(o: { conferidaEm: Date | null; conferenciaResultado: string | null; ativa: boolean }) {
+  return o.ativa && o.conferidaEm != null && (o.conferenciaResultado === "ok" || o.conferenciaResultado === "mudou");
 }
 
 /** Ensina ao cadastro de lugares o que a fonte contou (sem apagar o que já se sabe). */

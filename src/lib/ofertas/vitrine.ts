@@ -54,6 +54,11 @@ export type ItemVitrine = {
   voltaDuracaoMin: number | null;
   voltaVoos: string | null;
   assentos: number | null;
+  emitirAte: Date | null;
+  conferidaEm: Date | null;
+  conferenciaResultado: string | null;
+  conferenciaVariacao: number | null;
+  conferenciaMotivo: string | null;
   hotelNome: string | null;
   regime: string | null;
   etiquetas: string[];
@@ -164,6 +169,11 @@ export async function lerVitrine(f: Filtros): Promise<Vitrine> {
       voltaDuracaoMin: o.voltaDuracaoMin,
       voltaVoos: o.voltaVoos,
       assentos: o.assentos,
+      emitirAte: o.emitirAte,
+      conferidaEm: o.conferidaEm,
+      conferenciaResultado: o.conferenciaResultado,
+      conferenciaVariacao: num(o.conferenciaVariacao),
+      conferenciaMotivo: o.conferenciaMotivo,
       hotelNome: o.hotelNome,
       regime: o.regime,
       etiquetas: o.etiquetas,

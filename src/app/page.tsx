@@ -192,6 +192,20 @@ function Trecho({ saida, chegada, paradas, dur, voos }: { saida: Date | null; ch
   );
 }
 
+/** O selo da conferência na fonte (o revalidador da V1b/V4 grava). */
+function Conferencia({ i, agora }: { i: ItemVitrine; agora: number }) {
+  if (!i.conferenciaResultado) return <div>não conferida</div>;
+  if (i.conferenciaResultado === "nao_deu") {
+    return <div className={s.alerta}>não conferida{i.conferenciaMotivo ? ` — ${i.conferenciaMotivo}` : ""}</div>;
+  }
+  const quando = i.conferidaEm ? haQuanto(i.conferidaEm, agora) : "";
+  if (i.conferenciaResultado === "mudou") {
+    const v = i.conferenciaVariacao;
+    return <div className={s.alerta}>preço mudou{v != null ? ` (${v > 0 ? "+" : ""}${v.toLocaleString("pt-BR")}%)` : ""} {quando}</div>;
+  }
+  return <div className={s.venda}>✓ conferida {quando}</div>;
+}
+
 function Linha({ i, agora }: { i: ItemVitrine; agora: number }) {
   const p = i.preco;
   return (
@@ -244,7 +258,11 @@ function Linha({ i, agora }: { i: ItemVitrine; agora: number }) {
         )}
         {i.fornecedor && i.fornecedor !== i.fonteNome && <small className={s.cinza}> via {i.fornecedor}</small>}
       </td>
-      <td className={s.cinza}>{haQuanto(i.vistaEm, agora)}</td>
+      <td className={s.cinza}>
+        {haQuanto(i.vistaEm, agora)}
+        {i.emitirAte && <div className={s.alerta}>emitir até {data(i.emitirAte)}</div>}
+        <Conferencia i={i} agora={agora} />
+      </td>
     </tr>
   );
 }

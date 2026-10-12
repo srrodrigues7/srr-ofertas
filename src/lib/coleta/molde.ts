@@ -77,6 +77,11 @@ export type OfertaNova = {
   voltaDuracaoMin?: number | null;
   voltaVoos?: string | null;
   assentos?: number | null;
+  /** Prazo para emitir, ISO com fuso (bloqueio aéreo de operadora). */
+  emitirAte?: string | null;
+  /** Como achar a MESMA oferta de novo na fonte, para conferir antes de aprovar
+   *  (pacote: código, origem, destino, datas, hotel; bloqueio: voo). */
+  localizador?: Record<string, unknown> | null;
 
   hotelNome?: string | null;
   hotelCategoria?: number | null;

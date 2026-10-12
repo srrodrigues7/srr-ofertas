@@ -625,6 +625,10 @@ async function ofertaDeVoos(
     fornecedor: "Smiles",
     link: linkSmiles(base.origem, base.destino, ida, volta, base.classe === "executiva"),
     dadosFonte: { ida: { voos: vIda.voos, uid: vIda.uid }, volta: vVolta ? { voos: vVolta.voos, uid: vVolta.uid } : null },
+    localizador: {
+      origem: base.origem, destino: base.destino, ida, volta, classe: base.classe,
+      voosIda: vIda.voos, voosVolta: vVolta?.voos ?? null,
+    },
   };
   const precos: PrecoNovo[] = [];
   for (const [o, d, dia, v] of [
