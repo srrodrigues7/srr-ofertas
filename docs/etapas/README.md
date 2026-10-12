@@ -167,6 +167,14 @@ regime (all inclusive, café…), região/país/cidade, praia ou cidade, categor
 do hotel, se aceita criança, classe — de forma consultável (campos ou
 etiquetas), não só como texto de descrição.
 
+**Bloqueio aéreo junto com hotel (Cativa).** O Saulo (12/10): bloqueio
+vendido sozinho não é o negócio da SRR; ele faz sentido **ligado a um resort
+ou hotel**. O bloqueio já vem de graça na leitura do viajandocomdesconto, com
+preço por data e lugares. Duas melhorias possíveis: (a) no pacote pronto,
+dizer "mais datas com voo de bloqueio a partir de R$ X"; (b) montar **resort +
+bloqueio** pela aba "Monte Pacote" do portal da Cativa — bem mais consultas e
+mais risco para a conta, decidir com números na mesa.
+
 ---
 
 ## O que cada etapa deixou pronto
@@ -400,3 +408,10 @@ na Hoteldo, só observar o portal e buscar o caminho comercial.
   com o e-mail da operação; usuário e senha no `.env`; e acesso de leitura à
   caixa desse e-mail (provedor + senha de aplicativo), para o robô ler o
   código.
+
+**Mudança de decisão do Saulo (12/10/2026), para a fase 2:** os bloqueios
+**não** entram na vitrine como passagem avulsa — "vender bloqueio por venda de
+bloqueio é fora do que fazemos". A fase 2 traz **só o pacote pronto** da Cativa
+(aéreo + hotel, preço montado pela Cativa). O conector continua lendo os
+bloqueios (vêm na mesma página, sem custo) mas não os mostra como oferta;
+"bloqueio + hotel" ficou em **No radar**.
