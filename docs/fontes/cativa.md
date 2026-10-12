@@ -1,12 +1,16 @@
 # Ficha — Cativa Operadora
 
-_Etapa V1b, fase 1, parte A (sem login). Investigado em 11/10/2026._
+_Etapa V1b, fase 1: parte A (sem login) e parte B (portal logado, o Saulo
+entrando). Investigado em 11/10/2026._
 
-**Veredito: construir agora**, pelo site aberto **viajandocomdesconto.com**.
-Uma página só traz **todos os pacotes e todos os bloqueios aéreos da Cativa**,
-sem login, sem proteção anti-robô. Em paralelo, **pedir a API oficial**
-(Infotravel) e, na parte B, olhar o portal logado para **revalidar o preço na
-hora de aprovar**.
+**Veredito: construir agora.** A vitrine sai do **viajandocomdesconto.com**,
+que é **canal oficial da Cativa** (a Cativa passou o link ao Saulo, ele está
+no linktr.ee oficial dela e o próprio portal do agente o anuncia como "página
+exclusiva para o seu cliente"). Uma página só traz **todos os pacotes e todos
+os bloqueios aéreos**, sem login. O **revalidador automático** confere o preço
+ao vivo no portal do agente (Infotravel) com um usuário só do robô — desenho
+e alternativas em [revalidador-cativa.md](revalidador-cativa.md). Em paralelo,
+**pedir a API oficial** (texto abaixo); quando vier, troca-se só o conector.
 
 Prova: `node scripts/provas/cativa-vitrine.ts` (ver o fim desta ficha).
 
@@ -16,10 +20,11 @@ Prova: `node scripts/provas/cativa-vitrine.ts` (ver o fim desta ficha).
 
 | caminho | degrau | o que dá | custa / risco | veredito |
 |---|---|---|---|---|
-| **viajandocomdesconto.com** (site aberto, "Produto Operado por Cativa Operadora") | 3, mas com os dados **já em JSON dentro da página** (quase um 2) | 467 pacotes (1.642 saídas × até 3 hotéis) e 10.871 bloqueios aéreos, de 33 cidades de origem; 100 saídas de pacote e 1.004 bloqueios saindo de **BSB** | 5,3 MB por leitura; o servidor diz se mudou (`ETag`/`Last-Modified`), então quase sempre é uma pergunta de poucos bytes. Não é o site oficial da Cativa: se mudar de formato ou sair do ar, o conector para | **usar já** |
+| **viajandocomdesconto.com** (canal oficial da Cativa para as agências mostrarem aos clientes) | 3, mas com os dados **já em JSON dentro da página** (quase um 2) | 467 pacotes (1.642 saídas × até 3 hotéis) e 10.871 bloqueios aéreos, de 33 cidades de origem; 100 saídas de pacote e 1.004 bloqueios saindo de **BSB** | 5,3 MB por leitura; o servidor diz se mudou (`ETag`/`Last-Modified`), então quase sempre é uma pergunta de poucos bytes. Se mudar de formato ou sair do ar, o conector para e avisa | **fonte principal** |
+| **Divulgação da SRR** (`cativaoperadora.com.br/divulgacao/srr-viagens?Embarque=DF`) | 3 | **artes prontas (PNG) com a marca da SRR**, por embarque (DF), por região, com o nome do arquivo dizendo a data (ex.: `1009_…` = 09/10) e um texto curto ("Natal/BSB 08/12") | o preço só existe **dentro da imagem** — como dado, perde para o viajandocomdesconto | não é fonte de oferta; **guardar para a V4** (card): a Cativa já entrega a arte oficial |
 | **cativaoperadora.com.br** (site oficial) | 3 | catálogo: "a partir de R$ X em 10x" por resort/pacote | **não diz cidade de saída nem data** — não serve para oferta | não usar |
 | **Painel de bloqueios** (Power BI público, link "Bloqueios aéreos" do site oficial) | 3/4 | a fonte oficial dos bloqueios: origem, destino, datas, tarifa, lugares, companhia (129.541 lugares hoje) | ler Power BI por programa é frágil e pesado | **plano B** dos bloqueios |
-| **Portal do agente** (`reservas.cativaoperadora.com.br/infotravel`, sistema Infotravel) | 4 (ou 2, se tiver endpoint) | o preço **ao vivo**, com disponibilidade real, e o líquido/comissão | login da agência; é o acesso que emite — ritmo leve | **parte B** — para revalidar na aprovação |
+| **Portal do agente** (`reservas.cativaoperadora.com.br/infotravel`, sistema Infotravel) | 4 (não há chamada de dados limpa — ver parte B) | o preço **ao vivo**, com disponibilidade real | login da agência + código por e-mail às vezes; é o acesso que emite — ritmo leve, usuário só do robô | **revalidador** |
 | **API Infotravel** (a mesma que sistemas de agência como o Monde usam para falar com a Cativa) | 1 | busca e disponibilidade oficiais | depende da Cativa liberar para a SRR | **pedir agora** (texto abaixo) |
 
 O link "ver orçamento" de cada pacote no viajandocomdesconto abre um orçamento
@@ -64,7 +69,7 @@ Três blocos de dados:
 | noites | calculado | da diferença entre as datas |
 | hotel e **regime** | sim | nome do hotel e regime ("All Inclusive", "Café da manhã", "Meia pensão"…) — 319 dos 3 mil hotéis são all inclusive |
 | **preço** | sim | **pacote completo com aéreo, por pessoa, em quarto duplo** ("Cotação em quarto duplo") |
-| taxa | sim | por pessoa, por hotel ("+ taxa R$ 199"). Há também um "taxas R$ 398,04" na saída, que parece ser 2 × 199,02 — **a confirmar na parte B** |
+| taxa | sim | por pessoa, por hotel ("+ taxa R$ 199"). Há também um "taxas R$ 398,04" na saída (igual em quase todas). No portal as taxas **variam por hotel e voo** e já vêm somadas ao total ("Taxas inclusas BRL 261,86" para 2) — o revalidador usa o total do portal e ignora este campo |
 | **parcelas** | sim | "10x de R$ 975", **sem juros** nos cartões Visa e Mastercard (o site também oferece boleto pré-pago parcelado e desconto à vista) |
 | aéreo do pacote | sim | "de R$ 1.269 por R$ 869" — o preço só do aéreo, por pessoa |
 | o que inclui | sim | lista (aéreo ida e volta, noites, transfer, passeios, seguro) |
@@ -126,17 +131,23 @@ oferta com perfis de gosto de clientes. O que a Cativa entrega:
 
 O site é feito para o **cliente final** ("Consulte o seu Agente de Viagens",
 botão de mandar para o WhatsApp). Os preços são os **públicos, de venda** —
-coerente com o que o Saulo disse: na operadora a RAV vem embutida. **A
-confirmar na parte B:** comparar um pacote aqui com o mesmo no portal do
-agente (preço público × líquido × comissão).
+coerente com o que o Saulo disse: na operadora a RAV vem embutida. **Confirmado
+na parte B:** o portal busca na tabela "CATIVA COMISSIONADO" (há também
+"NETPIX — tarifa não comissionada"), e o preço da busca é o de venda; a
+comissão não aparece na tela de busca (há um relatório "COMISSÕES" à parte).
 
 ## Frescor e confiança
 
 - O preço dos pacotes é "a partir de" e foi cotado há dias ou semanas.
 - Os bloqueios são mais confiáveis (têm assentos e prazo de emissão), mas
   também são uma foto de quando a lista foi gerada.
-- **Por isso a revalidação na hora de aprovar (lição 4) precisa do portal
-  logado ou da API** — é o principal motivo da parte B.
+- **Medido na parte B (11/10):**
+  - **bloqueios batem exatamente** com o portal ao vivo (BSB→REC 17–24/10
+    R$ 757 e R$ 807; 04–11/11 R$ 898 e R$ 849; 05–10/11 R$ 789, 2 lugares);
+  - **pacote mudou ~4%:** Enotel all inclusive 17–24/11 estava R$ 9.750 +
+    R$ 199 por pessoa no viajandocomdesconto (cotado em 17/08) e **R$ 10.338,27
+    por pessoa** (taxas inclusas) no portal, com 46 quartos.
+- **Por isso o revalidador automático** ([revalidador-cativa.md](revalidador-cativa.md)).
 - A própria fonte tem erros de digitação (um "cotado em 23/09/2023", destinos
   em caixa alta ou não). O conector normaliza.
 
@@ -145,8 +156,8 @@ agente (preço público × líquido × comissão).
 | risco | plano B |
 |---|---|
 | o site muda o formato dos dados | o conector avisa ("não achei os pacotes — o site mudou de formato?") e a Saúde mostra; ajuste costuma ser pequeno |
-| o site sai do ar (não é o oficial da Cativa) | bloqueios: painel Power BI oficial; pacotes: API Infotravel ou portal logado |
-| preço velho | revalidar na aprovação (parte B / API) |
+| o site sai do ar | bloqueios: painel Power BI oficial ou a tela "Bloqueios de voo" do portal; pacotes: API Infotravel ou a busca do portal |
+| preço velho | revalidador automático antes do topo e na aprovação |
 | a página fica parada (sem republicar) | o conector lê a data de publicação e a de geração; a Saúde avisa se passar de X dias |
 
 ## O que se reaproveita para Pátria e Azul Viagens
@@ -177,6 +188,11 @@ agente (preço público × líquido × comissão).
 > 4. se possível, **um usuário separado só para o sistema**, sem permissão de
 >    reservar ou emitir.
 >
+> Enquanto a API não sai, vamos usar um usuário nosso do portal só para
+> **conferir preço e disponibilidade** das ofertas antes de divulgar, em ritmo
+> bem leve (algumas dezenas de consultas por dia). Se preferirem outro
+> caminho para isso, nos avisem.
+>
 > Não vamos reservar nem emitir por ela — a emissão continua com a gente, pelo
 > portal. Obrigado!
 
@@ -198,13 +214,46 @@ LATAM, 1 lugar) e R$ 520 + R$ 199 (BSB–Recife, GOL, dezenas de datas).
 Guarda a página numa pasta temporária e, por 30 minutos, não volta ao site;
 depois disso só pergunta se mudou.
 
-## Para a parte B (portal logado)
+## Parte B — o que o portal do agente mostrou (o Saulo entrando)
 
-1. O preço do viajandocomdesconto é o mesmo do portal? É o de venda (com RAV)?
-2. O "taxas R$ 398,04" da saída é o quê?
-3. O portal busca por **destino e mês** ou só data exata? Tem endpoint (JSON)
-   por trás da busca?
-4. Como o portal autentica, se pede código de verificação e por onde, quanto
-   dura a sessão — e se dá para criar **um usuário só para o robô, só consulta**.
-5. Dá para revalidar um pacote/bloqueio específico (o mesmo hotel, a mesma
-   data) com uma consulta leve?
+**Login.** Tela de usuário e senha (`login.xhtml`), depois uma etapa
+(`auth.xhtml`) que **às vezes pede um código enviado por e-mail** — pediu desta
+vez. O portal deixa um cookie de "dispositivo conhecido" (`AuthInfo…`), o que
+explica o "às vezes". A sessão cai após **~58 min parada** (monitor de
+inatividade de 3.475 s).
+
+**Usuário do robô.** O menu **Profissionais** tem "Adicionar", com perfis
+"Administrador agência", "Vendedor agência" e "Agência corp". O Saulo pode
+criar sozinho um usuário **Vendedor** só para o robô, cadastrado com o
+**e-mail da operação** (para o código chegar lá). Não vimos um perfil "só
+consulta" — o robô nunca clica em reservar, e isso é regra do código.
+
+**Como o portal é feito.** Sistema **JSF/PrimeFaces** (Infotravel 3.0.5):
+cada tela guarda estado no servidor, as buscas são envios de formulário que
+devolvem **pedaços de HTML**, e os campos do pacote têm nomes gerados
+(`j_idt3448`) que mudam a cada versão. **Não há chamada de dados (JSON)
+limpa.** A tela de bloqueios usa nomes fixos (`idSgOrigem`, `idSgDestino`).
+
+**Busca de pacote** ("Reservar" → atendimento "CATIVA COMISSIONADO" →
+"Pacote & Multidestinos"): origem (sugestão), destino (lista: **233 destinos
+saindo de BSB**, cidades e pacotes-resort), **ida e volta em data exata**,
+quartos. **Não busca por mês.** Levou ~20 s. Resultado (BSB→Porto de
+Galinhas, 17–24/11, 2 adultos): **74 hotéis**, 10 por página, filtros por
+hotel, preço, **estrelas**, avaliação, região, política de cancelamento e
+**regime**. Por hotel: tipo de quarto, quartos disponíveis, regime, **preço
+por pessoa**, total, taxas inclusas; o voo do pacote (companhia, horários,
+paradas, classe). Ex.: Pousada Atlantic R$ 2.776,68 por pessoa (total
+R$ 5.553,36, taxas R$ 261,86); Enotel all inclusive R$ 10.338,27.
+
+**Bloqueios de voo** (menu Bloqueios): busca por origem, destino e **período**
+(padrão: 30 dias), ~5 s. Por voo: partida/chegada (com hora), companhia, nº do
+voo, **tarifa**, localizador do bloqueio, **prazo (deadline) com hora**, status
+e **lugares disponíveis** (alguns com 0 = esgotado). **Uma consulta confere
+todos os bloqueios de uma rota num período** — barato para o revalidador.
+
+**Parcelas:** o portal oferece pagamento parcelado; o número de parcelas não
+aparece na busca (o viajandocomdesconto diz 10x sem juros).
+
+**Características para o gosto do cliente, no portal:** além do que o
+viajandocomdesconto dá, o portal tem **estrelas** e **tipo de quarto** — o
+revalidador pode trazê-los quando conferir uma oferta.
