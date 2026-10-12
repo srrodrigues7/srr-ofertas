@@ -138,6 +138,20 @@ que investigar em cada fonte.
 - **Classes: econômica e executiva.**
 - **Curadoria trabalha no computador** — o painel é desenhado para tela grande.
 
+## No radar — ideias do Saulo para depois
+
+**Busca para o cliente (o motor a serviço do consultor).** O cliente chega com
+um pedido ("Lisboa em março, casal, até R$ 8 mil"); o consultor registra o
+pedido e o motor (a) busca na hora em todas as fontes e devolve as melhores
+opções, e (b) se não houver nada bom, **fica vigiando** e avisa o consultor
+quando aparecer um preço dentro do que o cliente quer. Com o VoePro no ar, o
+pedido nasce do negócio no funil e o alerta vira tarefa no card.
+
+**O que isso exige desde já (V1a):** o "o que buscar" é uma **lista de pedidos
+de busca** — destino, janela de datas, pessoas, classe, preço-alvo opcional e
+**quem pediu** (hoje sempre a agência) — e não uma lista fixa de destinos. Assim
+a ideia vira uma etapa nova sem refazer o coletor.
+
 ---
 
 ## O que cada etapa deixou pronto
