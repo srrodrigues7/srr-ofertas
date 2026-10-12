@@ -141,6 +141,7 @@ function Grupo({ g, agora, pendentes }: { g: GrupoVitrine; agora: number; penden
             </small>
           )}
           {!g.aPartirDeVenda && g.aPartirDe != null && <small className={s.alerta}>custo (sem venda)</small>}
+          {melhor?.taxasEstimadas && <small className={s.alerta}>com taxa estimada</small>}
         </span>
         <span className={s.datas}>{datas ? `${datas} data${datas > 1 ? "s" : ""}` : "só o mês"}</span>
         <span className={s.fontes}>{g.fontes.join(" · ")}</span>
@@ -230,7 +231,7 @@ function Linha({ i, agora }: { i: ItemVitrine; agora: number }) {
             {i.assentos != null && i.assentos < 9 && <small className={s.alerta}>{i.assentos} assentos</small>}
           </>
         ) : (
-          <span className={s.cinza}>{i.fonteId === "smiles" ? "detalhe na fila do navegador" : "a fonte não informa"}</span>
+          <span className={s.cinza}>a fonte não informa</span>
         )}
       </td>
       <td>{BAGAGEM[i.bagagem] || "—"}</td>
@@ -238,7 +239,7 @@ function Linha({ i, agora }: { i: ItemVitrine; agora: number }) {
         {i.milhas != null ? (
           <>
             {milhas(p.milhasDoCusto ?? i.milhas)} + {reais(i.taxasBrl)}
-            {i.taxasEstimadas && <small className={s.cinza}> (taxa estimada)</small>}
+            {i.taxasEstimadas && <small className={s.alerta}> (taxa ESTIMADA — confirmar na emissão)</small>}
             <div>{p.custo != null ? reais(p.custo) : <small className={s.alerta}>falta {p.faltas.join(", ")}</small>}</div>
             {i.precoReferenciaBrl != null && <small className={s.cinza}>em dinheiro na cia: {reais(i.precoReferenciaBrl)}</small>}
           </>

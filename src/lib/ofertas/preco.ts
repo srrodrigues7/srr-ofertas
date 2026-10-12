@@ -90,7 +90,7 @@ export function precificar(o: OfertaParaPreco, v: Valores): Preco {
       faltas.push(`programa de milhas "${o.programaId ?? "?"}" não cadastrado`);
     } else {
       milhasDoCusto = prog.usaClube ? o.milhas : o.milhasNormal;
-      if (milhasDoCusto == null) faltas.push(`preço sem Clube ${prog.nome} (só vem no detalhe do voo)`);
+      if (milhasDoCusto == null) faltas.push(`preço sem Clube ${prog.nome} (a Smiles só mostra o preço Clube no calendário)`);
       if (prog.precoMilheiro == null) faltas.push(`preço do milheiro ${prog.nome}`);
       if (o.taxasBrl == null) faltas.push("taxas");
       if (milhasDoCusto != null && prog.precoMilheiro != null && o.taxasBrl != null) {

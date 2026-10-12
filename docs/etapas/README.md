@@ -305,8 +305,11 @@ seção.
 **Decisões do Saulo nesta etapa**
 
 - Custo em milhas Smiles pela tarifa **Clube** (caixa "Clube" do programa, em Valores).
-- Smiles **por endpoint**; o detalhe do voo pelo endpoint chamado **de dentro de
-  uma janela do Edge** (o Akamai recusa quem não é navegador; nada é disfarçado).
+- Smiles **por endpoint**: só o **calendário aberto**, com **taxa estimada**
+  (Valores) e aviso na tela. A busca completa e a taxa de embarque ficam atrás
+  do Akamai; o caminho pelo Edge com janela foi **removido na revisão** (usar um
+  acesso porque ele passa pela proteção é contorná-la — regra da casa). O
+  caminho legítimo é pedir acesso à Smiles: texto pronto em `docs/fontes/smiles.md`.
 - Preço do **Melhores Destinos é custo + margem** (como milhas), com as parcelas do link.
 - Parcelas: tabela editável; começa com **4× "sem juros" com 10% embutidos**
   (total = venda × 1,10).
@@ -318,7 +321,9 @@ seção.
 **O que existe**
 
 - **Fichas:** `docs/fontes/smiles.md`, `melhores-destinos.md`, `README.md`.
-  Prova da busca completa da Smiles: `npx tsx scripts/provas/smiles-detalhe.ts BSB REC 2027-01-12`.
+  Migração `…_smiles_sem_navegador`: tira as chaves do detalhe, desliga os 2
+  pedidos de executiva (nenhuma fonte dá executiva hoje) e tira da vitrine o que
+  veio pela busca completa.
 - **Banco** (migração `20261012020244_vitrine`, **aplicada só no banco de
   testes**): `fonte`, `programa`, `lugar`, `busca` (pedidos), `faixa_busca`,
   `margem`, `parcela_taxa`, `coleta`, `oferta` (o molde), `preco_observado`
@@ -347,8 +352,8 @@ seção.
   MD de BSB: 136 destinos.
 - "Buscar agora" BSB→Salvador: 13 buscas em 92 s (3 calendários Smiles, 10
   meses do MD); clicar de novo não duplica (índice único parcial).
-- Detalhe pelo Edge: BSB→SSA 08–11/11, G3 1726, 41.200 milhas + R$ 90,17 de
-  taxa real (a estimada era R$ 70; daí em diante a rota usa a real).
+- Depois da revisão: passada sem navegador, calendários da Smiles ok
+  (ex.: BSB→REC jan–mar, a partir de 27.700 milhas + taxa estimada).
 - Dois motores ligados (sem querer: no Windows, parar o `npm` não derruba o
   processo filho): só um trabalhou, o outro esperou a vez. **Desligue o motor
   com Ctrl+C no terminal dele.**
@@ -414,12 +419,14 @@ Requisição sempre por `pedirJson` (prazo, contagem, "bloqueado" em 403/406/429
 
 - Pedido com destino **país/região** existe na tabela, mas o motor só busca
   destino **cidade** por enquanto.
-- **Executiva**: só pela Smiles (busca completa, 2 datas de amostra por mês,
-  dentro da cota `smiles.detalhes_por_hora`). O MD não tem executiva.
+- **Executiva: nenhuma fonte dá hoje** (o calendário da Smiles e o MD são
+  econômica). Os pedidos de executiva ficam guardados e desligados; voltam com
+  uma fonte nova (V3.x) ou com o acesso oficial da Smiles.
+- Smiles sem horário, voo, conexões, bagagem nem taxa real: as ofertas dela são
+  `detalhe = 'dia'` com taxa estimada. As preferências de voo da V2 só valem
+  para fontes que derem esses campos.
 - O mural do MD (descoberta além dos pedidos) guarda a lista de cidades **na
   memória do motor**: religado, ele varre o mural de novo antes.
-- O Edge abre uma janela minimizada a cada passada que tiver detalhe — no
-  computador dedicado, sem problema; no notebook, aparece na barra de tarefas.
 - **Produção:** a migração `vitrine` ainda não foi aplicada lá.
 - **Falta o Saulo preencher o milheiro Smiles** (Valores): sem ele, as ofertas
   em milhas aparecem com "falta preço do milheiro" e vão para o fim da lista.

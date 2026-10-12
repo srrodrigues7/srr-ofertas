@@ -4,7 +4,7 @@ import { nomeDaCompanhia } from "@/lib/companhias";
 import { diasEntre, doBanco, fimDoMes, hoje, inicioDoMes, mesDe, somarDias } from "@/lib/datas";
 import type { Contador } from "./http";
 import { desativarAusentes, gravarLugares, gravarOfertas, gravarPrecos } from "./gravar";
-import type { Classe, OfertaNova, PrecoNovo } from "./molde";
+import type { OfertaNova, PrecoNovo } from "./molde";
 import {
   vencimento,
   executar,
@@ -17,7 +17,7 @@ import {
   type Resultado,
   type Tarefa as TarefaDoNucleo,
 } from "./nucleo";
-import { NavegadorSmiles, calendarioSmiles, linkSmiles, melhorVoo, type DiaSmiles, type VooSmiles } from "./fontes/smiles";
+import { calendarioSmiles, linkSmiles, type DiaSmiles } from "./fontes/smiles";
 import { cidadesDoMural, precosDaRota, regiaoDaCategoria, type CidadeMd, type MesPreco } from "./fontes/melhores-destinos";
 
 /**
@@ -34,26 +34,19 @@ import { cidadesDoMural, precosDaRota, regiaoDaCategoria, type CidadeMd, type Me
  * `coleta.pausa_apos_bloqueio_min`. Uma fonte que falha não derruba a outra.
  */
 
-/** O que as tarefas de passagem recebem: a configuração e o navegador da passada. */
+/** O que as tarefas de passagem recebem: a configuração da passada. */
 type Contexto = {
   cfg: ConfiguracaoDaColeta;
   contador: Contador;
   coletaId: bigint;
-  navegador: NavegadorSmiles;
 };
 
 /** Uma tarefa de passagem: como a do núcleo, mas recebe o contexto inteiro. */
 type Tarefa = Omit<TarefaDoNucleo, "rodar"> & { rodar: (ctx: Contexto) => Promise<Resultado> };
 
 /** Liga a tarefa de passagem ao núcleo, que só conhece contador e coleta. */
-function paraNucleo(t: Tarefa, cfg: ConfiguracaoDaColeta, navegador: NavegadorSmiles): TarefaDoNucleo {
-  return {
-    ...t,
-    rodar: (base) => t.rodar({ ...base, cfg, navegador }),
-    // Uma página do navegador que deu erro pode estar num estado ruim: fecha;
-    // a próxima busca abre outra.
-    aoFalhar: t.fonteId === SMILES ? () => navegador.fechar() : undefined,
-  };
+function paraNucleo(t: Tarefa, cfg: ConfiguracaoDaColeta): TarefaDoNucleo {
+  return { ...t, rodar: (base) => t.rodar({ ...base, cfg }) };
 }
 
 type BuscaLinha = Awaited<ReturnType<typeof lerBuscas>>[number];
@@ -77,31 +70,25 @@ export async function coletarPassagens(opcoes: { ate: number; log: Log }): Promi
            resumo = 'Interrompido: o motor caiu ou foi desligado no meio da busca. Peça de novo.'
      WHERE status = 'buscando' AND comecou_em < now() - interval '15 minutes'`;
 
-  const navegador = new NavegadorSmiles(cfg["smiles.prazo_s"]);
   const partes: string[] = [];
-  try {
-    // 1. "Buscar agora"
-    for (;;) {
-      const pedido = await pegarPedidoDaFila();
-      if (!pedido) break;
-      partes.push(await atenderBuscarAgora(pedido.id, pedido.buscaId, cfg, navegador, log));
-    }
-
-    // 2. A agenda
-    const tarefas = (await montarAgenda(cfg)).map((t) => paraNucleo(t, cfg, navegador));
-    const { feitas, erros, total } = await rodarAgenda(tarefas, opcoes.ate, log);
-    const pendentes = total - feitas;
-    partes.push(
-      total
-        ? `Coleta: ${feitas} de ${total} tarefa(s) vencida(s)${erros ? `, ${erros} com erro` : ""}` +
-            (pendentes > 0 ? ` (${pendentes} ficam para a próxima passada)` : "") +
-            (navegador.buscas ? `; ${navegador.buscas} busca(s) pelo navegador` : "") +
-            "."
-        : "Coleta: nada vencido.",
-    );
-  } finally {
-    await navegador.fechar();
+  // 1. "Buscar agora"
+  for (;;) {
+    const pedido = await pegarPedidoDaFila();
+    if (!pedido) break;
+    partes.push(await atenderBuscarAgora(pedido.id, pedido.buscaId, cfg, log));
   }
+
+  // 2. A agenda
+  const tarefas = (await montarAgenda(cfg)).map((t) => paraNucleo(t, cfg));
+  const { feitas, erros, total } = await rodarAgenda(tarefas, opcoes.ate, log);
+  const pendentes = total - feitas;
+  partes.push(
+    total
+      ? `Coleta: ${feitas} de ${total} tarefa(s) vencida(s)${erros ? `, ${erros} com erro` : ""}` +
+          (pendentes > 0 ? ` (${pendentes} ficam para a próxima passada)` : "") +
+          "."
+      : "Coleta: nada vencido.",
+  );
   return partes.join(" ");
 }
 
@@ -145,7 +132,6 @@ async function atenderBuscarAgora(
   pedidoId: bigint,
   buscaId: number,
   cfg: ConfiguracaoDaColeta,
-  navegador: NavegadorSmiles,
   log: Log,
 ): Promise<string> {
   const [busca] = await lerBuscas(buscaId);
@@ -158,28 +144,17 @@ async function atenderBuscarAgora(
     const faixas = await lerFaixas();
     const lugar = await prisma.lugar.findUnique({ where: { codigo: busca.destino } });
     const tarefas: Tarefa[] = [];
-    if (fontes.has(SMILES)) {
-      if (busca.classe === "economica") {
-        for (const f of faixas) tarefas.push(tarefaCalendario(busca, f, lugar?.pais ?? null));
-      } else {
-        for (const ida of datasDeExecutiva(busca, faixas.slice(0, 1), cfg)) {
-          tarefas.push(tarefaExecutiva(busca, ida, lugar?.pais ?? null));
-        }
-      }
-    }
-    if (fontes.has(MD) && busca.classe === "economica") {
-      for (const mes of mesesDoHorizonte(busca, faixas)) tarefas.push(tarefaDatasMd(busca, mes, cfg));
+    // Executiva: nenhuma fonte de hoje dá (o calendário da Smiles é econômica;
+    // o MD também). O pedido fica guardado para quando houver fonte.
+    if (busca.classe === "economica") {
+      if (fontes.has(SMILES)) for (const f of faixas) tarefas.push(tarefaCalendario(busca, f, lugar?.pais ?? null));
+      if (fontes.has(MD)) for (const mes of mesesDoHorizonte(busca, faixas)) tarefas.push(tarefaDatasMd(busca, mes, cfg));
+    } else {
+      partes.push("Executiva: nenhuma fonte ligada dá preço de executiva por enquanto.");
     }
     for (const t of tarefas) {
-      const s = await executar(paraNucleo(t, cfg, navegador), "agora", log);
+      const s = await executar(paraNucleo(t, cfg), "agora", log);
       if (s === "erro" || s === "bloqueado") falhas++;
-    }
-    // Depois do calendário, detalha as datas mais baratas deste pedido.
-    if (fontes.has(SMILES) && busca.classe === "economica") {
-      for (const t of await tarefasDeDetalhe(cfg, [busca.id], cfg["smiles.detalhar_por_busca"])) {
-        const s = await executar(paraNucleo(t, cfg, navegador), "agora", log);
-        if (s === "erro" || s === "bloqueado") falhas++;
-      }
     }
     const ativas = await prisma.oferta.count({ where: { buscaId, ativa: true } });
     partes.push(
@@ -231,30 +206,6 @@ async function montarAgenda(cfg: ConfiguracaoDaColeta): Promise<Tarefa[]> {
         if (v === null) continue;
         t.prioridade = v + bonus(f);
         daSmiles.push(t);
-      }
-    }
-    // O navegador tem cota por hora (ritmo educado): detalhes da econômica
-    // primeiro, depois as datas de executiva.
-    const usadas = await prisma.coleta.count({
-      where: { fonteId: SMILES, tipo: "detalhe", comecouEm: { gt: new Date(Date.now() - HORA) } },
-    });
-    let cota = Math.max(0, cfg["smiles.detalhes_por_hora"] - usadas);
-    const economicas = buscas.filter((b) => b.classe === "economica").map((b) => b.id);
-    for (const t of await tarefasDeDetalhe(cfg, economicas, cfg["smiles.detalhar_por_busca"])) {
-      if (cota <= 0) break;
-      daSmiles.push(t);
-      cota--;
-    }
-    for (const b of buscas.filter((x) => x.classe !== "economica")) {
-      for (const ida of datasDeExecutiva(b, faixas, cfg)) {
-        if (cota <= 0) break;
-        const t = tarefaExecutiva(b, ida, lugares.get(b.destino)?.pais ?? null);
-        const f = faixaDoDia(ida, faixas);
-        const v = vencimento(ultimas.get(t.escopo), (f?.intervaloHoras ?? 24) * HORA);
-        if (v === null) continue;
-        t.prioridade = v + bonus(f) - 0.5; // depois da econômica
-        daSmiles.push(t);
-        cota--;
       }
     }
   }
@@ -420,7 +371,7 @@ async function rodarCalendario(b: BuscaLinha, f: Faixa, pais: string | null, ctx
     escolhidos.push(...lista.slice(0, cfg["smiles.combinacoes_por_mes"]));
   }
 
-  const taxa = await taxaConhecida(b.origem, b.destino, "economica", internacional, cfg);
+  const taxa = taxaEstimada(internacional, cfg);
   const ofertas: OfertaNova[] = escolhidos.map((c) => ({
     fonteId: SMILES,
     buscaId: b.id,
@@ -464,255 +415,10 @@ async function rodarCalendario(b: BuscaLinha, f: Faixa, pais: string | null, ctx
   };
 }
 
-/** A taxa de ida e volta: a última real desta rota, ou a estimativa da configuração. */
-async function taxaConhecida(
-  origem: string,
-  destino: string,
-  classe: Classe,
-  internacional: boolean,
-  cfg: ConfiguracaoDaColeta,
-): Promise<number> {
-  const real = await prisma.oferta.findFirst({
-    where: {
-      fonteId: SMILES, origem, destino, classe, detalhe: "voo", taxasEstimadas: false,
-      taxasBrl: { not: null }, composicao: "soma_trechos",
-    },
-    orderBy: { detalhadaEm: "desc" },
-    select: { taxasBrl: true },
-  });
-  if (real?.taxasBrl) return real.taxasBrl.toNumber();
+/** A taxa de ida e volta da Smiles: sempre ESTIMADA (Valores). A taxa real só
+ *  sai da busca completa, que fica atrás do Akamai e não é usada. */
+function taxaEstimada(internacional: boolean, cfg: ConfiguracaoDaColeta): number {
   return internacional ? cfg["smiles.taxa_estimada_internacional_brl"] : cfg["smiles.taxa_estimada_nacional_brl"];
-}
-
-// --- Smiles: detalhe pelo navegador -------------------------------------------
-
-type OfertaLinha = NonNullable<Awaited<ReturnType<typeof prisma.oferta.findFirst>>>;
-
-/** As datas mais baratas de cada pedido que ainda não têm detalhe fresco. */
-async function tarefasDeDetalhe(cfg: ConfiguracaoDaColeta, buscaIds: number[], porBusca: number): Promise<Tarefa[]> {
-  if (!buscaIds.length || porBusca <= 0) return [];
-  const linhas = await prisma.$queryRaw<{ id: bigint; rn: bigint; detalhada_em: Date | null }[]>`
-    SELECT id, rn, detalhada_em FROM (
-      SELECT id, detalhada_em,
-             row_number() OVER (PARTITION BY busca_id ORDER BY milhas, ida) AS rn
-        FROM "ofertas"."oferta"
-       WHERE fonte_id = ${SMILES} AND ativa AND classe = 'economica'
-         AND busca_id = ANY(${buscaIds}::int[]) AND milhas IS NOT NULL
-         AND ida > (now() AT TIME ZONE 'America/Sao_Paulo')::date
-    ) t
-    WHERE rn <= ${porBusca}
-      AND (detalhada_em IS NULL
-           OR detalhada_em < now() - (${cfg["smiles.detalhe_validade_horas"]}::int * interval '1 hour'))
-    ORDER BY rn, detalhada_em NULLS FIRST`;
-  return linhas.map((l, i) => ({
-    fonteId: SMILES,
-    tipo: "detalhe" as const,
-    escopo: `det:${l.id}`,
-    prioridade: 1.25 - i * 0.001, // entre os calendários dos meses próximos e os distantes
-    custoS: 45,
-    rodar: async (ctx: Contexto) => {
-      const o = await prisma.oferta.findUnique({ where: { id: l.id } });
-      if (!o || !o.ativa || !o.ida) return { itens: 0, historico: 0, resumo: "A oferta saiu da vitrine antes do detalhe." };
-      return rodarDetalhe(o, ctx);
-    },
-  }));
-}
-
-/** Busca os dois trechos no navegador, escolhe o melhor voo de cada um e completa a oferta. */
-async function rodarDetalhe(o: OfertaLinha, ctx: Contexto): Promise<Resultado> {
-  const ida = doBanco(o.ida!);
-  const volta = o.volta ? doBanco(o.volta) : null;
-  const executiva = o.classe === "executiva";
-  const vIda = await melhorDoDia(o.origem, o.destino, ida, executiva, o.internacional, ctx);
-  const vVolta = volta ? await melhorDoDia(o.destino, o.origem, volta, executiva, o.internacional, ctx) : null;
-  if (!vIda || (volta && !vVolta)) {
-    await prisma.oferta.update({ where: { id: o.id }, data: { ativa: false, detalhadaEm: new Date() } });
-    return { itens: 0, historico: 0, resumo: `${o.origem}→${o.destino} ${ida}: sem voo disponível na busca completa; saiu da vitrine.` };
-  }
-  const nova = await ofertaDeVoos(
-    {
-      buscaId: o.buscaId, origem: o.origem, destino: o.destino, destinoPais: o.destinoPais,
-      internacional: o.internacional, classe: o.classe as Classe,
-    },
-    ida, volta, vIda, vVolta, ctx,
-  );
-  await gravarOfertas([nova.oferta], ctx.coletaId);
-  const nPrecos = await gravarPrecos(nova.precos);
-  const antes = o.milhas;
-  return {
-    itens: 1,
-    historico: nPrecos,
-    resumo:
-      `${o.origem}→${o.destino} ${ida}${volta ? `/${volta}` : ""}: ${nova.oferta.idaVoos} ` +
-      `${nova.oferta.milhas?.toLocaleString("pt-BR")} milhas + R$ ${nova.oferta.taxasBrl?.toFixed(2)}` +
-      (antes && antes !== nova.oferta.milhas ? ` (o calendário dizia ${antes.toLocaleString("pt-BR")})` : ""),
-  };
-}
-
-async function melhorDoDia(
-  origem: string,
-  destino: string,
-  dia: string,
-  executiva: boolean,
-  internacional: boolean,
-  ctx: Contexto,
-): Promise<VooSmiles | null> {
-  const voos: VooSmiles[] = [];
-  for (const parceiras of internacional ? [false, true] : [false]) {
-    voos.push(...(await ctx.navegador.buscar(origem, destino, dia, { executiva, parceiras, contador: ctx.contador })));
-    await esperar(ctx.cfg["smiles.pausa_ms"]);
-  }
-  return melhorVoo(voos);
-}
-
-async function ofertaDeVoos(
-  base: {
-    buscaId: number | null; origem: string; destino: string; destinoPais: string | null;
-    internacional: boolean; classe: Classe;
-  },
-  ida: string,
-  volta: string | null,
-  vIda: VooSmiles,
-  vVolta: VooSmiles | null,
-  ctx: Contexto,
-): Promise<{ oferta: OfertaNova; precos: PrecoNovo[] }> {
-  const tIda = await ctx.navegador.taxa(vIda, ctx.contador);
-  const tVolta = vVolta ? await ctx.navegador.taxa(vVolta, ctx.contador) : 0;
-  await gravarLugares([...vIda.lugares, ...(vVolta?.lugares ?? [])]);
-  const taxasReais = tIda != null && tVolta != null;
-  const taxas = taxasReais
-    ? tIda + tVolta
-    : await taxaConhecida(base.origem, base.destino, base.classe, base.internacional, ctx.cfg);
-  const companhias = [...new Set([vIda.companhia, vVolta?.companhia].filter((c): c is string => !!c))];
-  const soma = (a: number | null, b: number | null | undefined) => (a == null || (vVolta && b == null) ? null : a + (b ?? 0));
-  const oferta: OfertaNova = {
-    fonteId: SMILES,
-    buscaId: base.buscaId,
-    tipo: "passagem",
-    detalhe: "voo",
-    origem: base.origem,
-    destino: base.destino,
-    destinoPais: base.destinoPais ?? vIda.lugares.find((l) => l.codigo === base.destino)?.pais ?? null,
-    internacional: base.internacional,
-    mes: mesDe(ida),
-    ida,
-    volta,
-    noites: volta ? diasEntre(ida, volta) : null,
-    composicao: volta ? "soma_trechos" : "so_ida",
-    classe: base.classe,
-    companhias,
-    companhiaNome: companhias.map((c) => nomeDaCompanhia(c)).join(" / ") || vIda.companhiaNome,
-    programaId: SMILES,
-    milhas: soma(vIda.milhasClube, vVolta?.milhasClube),
-    milhasNormal: soma(vIda.milhasNormal, vVolta?.milhasNormal),
-    taxasBrl: taxas,
-    taxasEstimadas: !taxasReais,
-    precoReferenciaBrl: soma(vIda.dinheiro, vVolta?.dinheiro),
-    bagagem: vIda.bagagem === "despachada" && (!vVolta || vVolta.bagagem === "despachada") ? "despachada" : "so_mao",
-    bagagemQtd: Math.min(vIda.bagagemQtd ?? 0, vVolta?.bagagemQtd ?? vIda.bagagemQtd ?? 0),
-    idaSaida: vIda.saida,
-    idaChegada: vIda.chegada,
-    idaParadas: vIda.paradas,
-    idaDuracaoMin: vIda.duracaoMin,
-    idaVoos: vIda.voos,
-    voltaSaida: vVolta?.saida ?? null,
-    voltaChegada: vVolta?.chegada ?? null,
-    voltaParadas: vVolta?.paradas ?? null,
-    voltaDuracaoMin: vVolta?.duracaoMin ?? null,
-    voltaVoos: vVolta?.voos ?? null,
-    assentos: Math.min(vIda.assentos ?? 9, vVolta?.assentos ?? 9),
-    etiquetas: [],
-    fornecedor: "Smiles",
-    link: linkSmiles(base.origem, base.destino, ida, volta, base.classe === "executiva"),
-    dadosFonte: { ida: { voos: vIda.voos, uid: vIda.uid }, volta: vVolta ? { voos: vVolta.voos, uid: vVolta.uid } : null },
-    localizador: {
-      origem: base.origem, destino: base.destino, ida, volta, classe: base.classe,
-      voosIda: vIda.voos, voosVolta: vVolta?.voos ?? null,
-    },
-  };
-  const precos: PrecoNovo[] = [];
-  for (const [o, d, dia, v] of [
-    [base.origem, base.destino, ida, vIda],
-    ...(vVolta && volta ? [[base.destino, base.origem, volta, vVolta] as const] : []),
-  ] as const) {
-    if (v.milhasClube) {
-      precos.push({
-        fonteId: SMILES, tipo: "trecho", origem: o, destino: d, classe: base.classe, mes: mesDe(dia), ida: dia,
-        unidade: "milhas", valor: v.milhasClube, programaId: SMILES, companhia: v.companhia,
-      });
-    }
-  }
-  return { oferta, precos };
-}
-
-// --- Smiles: executiva (não sai no calendário) --------------------------------
-
-/** Datas de amostra por mês: a executiva só se descobre pela busca completa. */
-function datasDeExecutiva(b: BuscaLinha, faixas: Faixa[], cfg: ConfiguracaoDaColeta): string[] {
-  const n = cfg["smiles.executiva_datas_por_mes"];
-  if (n <= 0) return [];
-  const amanha = somarDias(hoje(), 1);
-  const datas: string[] = [];
-  for (const mes of mesesDoHorizonte(b, faixas)) {
-    for (let i = 1; i <= n; i++) {
-      const dia = `${mes}-${String(Math.round((28 * i) / (n + 1))).padStart(2, "0")}`;
-      if (dia <= amanha) continue;
-      if (b.dataDe && dia < doBanco(b.dataDe)) continue;
-      if (b.dataAte && dia > doBanco(b.dataAte)) continue;
-      datas.push(dia);
-    }
-  }
-  return datas;
-}
-
-function tarefaExecutiva(b: BuscaLinha, ida: string, pais: string | null): Tarefa {
-  return {
-    fonteId: SMILES,
-    tipo: "detalhe",
-    escopo: `exe:${b.id}:${ida}`,
-    buscaId: b.id,
-    prioridade: 1,
-    custoS: 45,
-    rodar: async (ctx) => {
-      const estadia = Math.round(((b.estadiaMin ?? 7) + (b.estadiaMax ?? b.estadiaMin ?? 7)) / 2);
-      const volta = b.idaVolta ? somarDias(ida, estadia) : null;
-      const internacional = internacionalDe(pais, b.origem);
-      const vIda = await melhorDoDia(b.origem, b.destino, ida, true, internacional, ctx);
-      const vVolta = vIda && volta ? await melhorDoDia(b.destino, b.origem, volta, true, internacional, ctx) : null;
-      const vistas: string[] = [];
-      let nPrecos = 0;
-      let resumo = `${b.origem}→${b.destino} executiva ${ida}${volta ? `/${volta}` : ""}: `;
-      if (vIda && (!volta || vVolta)) {
-        const nova = await ofertaDeVoos(
-          { buscaId: b.id, origem: b.origem, destino: b.destino, destinoPais: pais, internacional, classe: "executiva" },
-          ida, volta, vIda, vVolta, ctx,
-        );
-        vistas.push(...(await gravarOfertas([nova.oferta], ctx.coletaId)));
-        nPrecos = await gravarPrecos(nova.precos);
-        resumo += `${nova.oferta.companhiaNome} ${nova.oferta.milhas?.toLocaleString("pt-BR")} milhas`;
-      } else {
-        resumo += "sem executiva disponível nessas datas";
-      }
-      // A data de amostra que não tem mais executiva sai da vitrine.
-      await desativarAusentes({
-        fonteId: SMILES, detalhes: ["voo"], vistas, buscaId: b.id, classe: "executiva", mesDe: mesDe(ida), mesAte: mesDe(ida),
-      }).then(async (n) => {
-        // Só a desta data: as outras datas de amostra do mês têm a sua própria tarefa.
-        if (n) await religarOutrasDatas(b.id, ida);
-      });
-      return { itens: vistas.length, historico: nPrecos, resumo };
-    },
-  };
-}
-
-/** `desativarAusentes` olha o mês inteiro; as outras datas de amostra do mesmo
- *  mês continuam valendo se foram vistas dentro da validade. */
-async function religarOutrasDatas(buscaId: number, ida: string) {
-  await prisma.$executeRaw`
-    UPDATE "ofertas"."oferta" SET ativa = true
-     WHERE fonte_id = ${SMILES} AND busca_id = ${buscaId} AND classe = 'executiva'
-       AND mes = ${mesDe(ida)} AND ida <> ${ida}::date AND NOT ativa
-       AND vista_em > now() - interval '2 days'`;
 }
 
 // --- Melhores Destinos ---------------------------------------------------------
@@ -889,4 +595,4 @@ function esperar(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-export const _paraTeste = { periodo, mesesDoHorizonte, datasDeExecutiva };
+export const _paraTeste = { periodo, mesesDoHorizonte };
