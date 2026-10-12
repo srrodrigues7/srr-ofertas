@@ -110,3 +110,354 @@ model Configuracao {
   @@map("configuracao")
   @@schema("ofertas")
 }
+
+// ============================================================================
+// V1a — a vitrine: o que buscar, de onde, o que achou, quanto custa.
+//
+// O MOLDE é a tabela `oferta`: toda fonte, de qualquer degrau, entrega neste
+// formato (passagem em milhas, passagem em dinheiro, executiva, pacote). O resto
+// do sistema não sabe de onde a oferta veio. Documentado em docs/etapas/README.md.
+// ============================================================================
+
+/// Um lugar de onde se busca preço: Smiles, Melhores Destinos, uma operadora.
+model Fonte {
+  /// "smiles", "melhores_destinos", "cativa"…
+  id           String   @id
+  nome         String
+  /// milhas · mercado (preço público de site de venda) · operadora · consolidadora
+  tipo         String
+  /// O degrau da escada de acesso (1 API oficial · 2 endpoint · 3 página · 4 navegador).
+  degrau       Int
+  /// Desligada, o motor não vai a ela (nem pelo "Buscar agora").
+  ligada       Boolean  @default(true)
+  /// Soma margem? Milhas e preço de mercado, sim; operadora e consolidadora já
+  /// trazem a RAV embutida (decisão do Saulo): o preço delas é o de venda.
+  aplicaMargem Boolean  @map("aplica_margem")
+  /// Para fonte de milhas: o programa cujo milheiro converte milhas em reais.
+  programaId   String?  @map("programa_id")
+  observacao   String?
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  programa Programa? @relation(fields: [programaId], references: [id])
+
+  @@map("fonte")
+  @@schema("ofertas")
+}
+
+/// Programa de milhas e o preço do milheiro que o Saulo informa.
+model Programa {
+  /// "smiles", "latam_pass", "azul_fidelidade"…
+  id            String   @id
+  nome          String
+  /// R$ por mil milhas. Vazio = não informado: a oferta fica sem custo e a tela
+  /// diz o que falta (nunca um valor inventado).
+  precoMilheiro Decimal? @map("preco_milheiro") @db.Decimal(10, 2)
+  /// Custo pela tarifa do clube do programa (Clube Smiles) em vez da normal.
+  usaClube      Boolean  @default(true) @map("usa_clube")
+  atualizadoEm  DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  fontes Fonte[]
+
+  @@map("programa")
+  @@schema("ofertas")
+}
+
+/// Aeroporto ou cidade, com o que se sabe dele. Nasce no cadastro inicial e
+/// cresce sozinho com o que as fontes contam. Serve às réguas da V2 ("América
+/// do Sul", "Argentina", "Buenos Aires") e ao gosto do cliente (praia, cidade).
+model Lugar {
+  /// Código IATA (aeroporto ou cidade).
+  codigo       String   @id
+  cidade       String
+  /// Estado, para o Brasil.
+  uf           String?
+  pais         String?
+  /// Brasil: Norte, Nordeste, Centro-Oeste, Sudeste, Sul. Fora: América do Sul,
+  /// América do Norte, Caribe e México, Europa, África, Ásia, Oriente Médio, Oceania.
+  regiao       String?
+  /// praia · cidade · serra · natureza · neve — quando se sabe.
+  estilo       String?
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("lugar")
+  @@schema("ofertas")
+}
+
+/// O que o motor busca: uma lista de PEDIDOS DE BUSCA, não de destinos fixos.
+///
+/// Hoje todo pedido é da agência (os "destinos principais" que o Saulo
+/// cadastra na tela). Amanhã o consultor registra o pedido de um cliente
+/// ("Lisboa em março, casal, até R$ 8 mil") na mesma tabela, com outro dono,
+/// e o motor busca do mesmo jeito.
+model Busca {
+  id           Int       @id @default(autoincrement())
+  /// Quem pediu. Hoje sempre "agencia".
+  dono         String    @default("agencia")
+  /// Aeroporto de saída (BSB; GRU/GIG para internacional).
+  origem       String
+  /// cidade (código IATA em `destino`) · pais · regiao
+  destinoTipo  String    @default("cidade") @map("destino_tipo")
+  destino      String
+  /// Janela de embarque. Vazia = o horizonte padrão (faixas de busca).
+  dataDe       DateTime? @map("data_de") @db.Date
+  dataAte      DateTime? @map("data_ate") @db.Date
+  idaVolta     Boolean   @default(true) @map("ida_volta")
+  /// Dias entre a ida e a volta.
+  estadiaMin   Int?      @map("estadia_min")
+  estadiaMax   Int?      @map("estadia_max")
+  adultos      Int       @default(1)
+  criancas     Int       @default(0)
+  /// economica · executiva
+  classe       String    @default("economica")
+  /// Preço-alvo por pessoa, opcional (para o pedido do cliente, no futuro).
+  precoAlvo    Decimal?  @map("preco_alvo") @db.Decimal(12, 2)
+  ligada       Boolean   @default(true)
+  observacao   String?
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  ofertas     Oferta[]
+  buscasAgora BuscaAgora[]
+
+  @@index([dono, ligada])
+  @@map("busca")
+  @@schema("ofertas")
+}
+
+/// Quanto o motor busca à frente e com que frequência: os meses próximos mais
+/// vezes que os distantes. O horizonte é o fim da última faixa.
+model FaixaBusca {
+  id             Int @id @default(autoincrement())
+  /// Meses a partir de hoje (0 = este mês).
+  deMes          Int @map("de_mes")
+  ateMes         Int @map("ate_mes")
+  intervaloHoras Int @map("intervalo_horas")
+
+  @@map("faixa_busca")
+  @@schema("ofertas")
+}
+
+/// A margem por tipo de venda: percentual e mínimo em reais, vale o maior.
+model Margem {
+  /// nacional · internacional · executiva · pacote
+  tipo         String   @id
+  percentual   Decimal  @db.Decimal(6, 2)
+  minimoBrl    Decimal  @map("minimo_brl") @db.Decimal(12, 2)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("margem")
+  @@schema("ofertas")
+}
+
+/// Taxa do link de pagamento por número de parcelas. O cliente vê "N× sem
+/// juros"; a taxa vem embutida: total = venda × (1 + taxa).
+model ParcelaTaxa {
+  parcelas     Int      @id
+  taxa         Decimal  @db.Decimal(6, 2)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("parcela_taxa")
+  @@schema("ofertas")
+}
+
+/// Cada ida a uma fonte, com sucesso ou erro. O "escopo" diz o que foi buscado
+/// (ex.: "cal:12:1" = calendário do pedido 12, faixa 1); o motor decide o que
+/// está vencido olhando a última coleta de cada escopo.
+model Coleta {
+  id          BigInt    @id @default(autoincrement())
+  fonteId     String    @map("fonte_id")
+  buscaId     Int?      @map("busca_id")
+  /// calendario · detalhe · varredura · datas
+  tipo        String
+  escopo      String
+  /// agenda (o motor sozinho) · agora (botão "Buscar agora")
+  motivo      String    @default("agenda")
+  comecouEm   DateTime  @default(now()) @map("comecou_em") @db.Timestamptz(6)
+  terminouEm  DateTime? @map("terminou_em") @db.Timestamptz(6)
+  duracaoMs   Int?      @map("duracao_ms")
+  /// rodando · ok · vazio · erro · bloqueado
+  status      String
+  requisicoes Int       @default(0)
+  /// Quantos itens a coleta gravou (ofertas, no caso das passagens). O registro
+  /// de coleta é genérico: o mesmo motor pode coletar outras coisas no futuro.
+  itens       Int       @default(0)
+  /// Quantos registros de histórico gravou.
+  historico   Int       @default(0)
+  resumo      String?
+  erro        String?
+
+  @@index([fonteId, escopo, comecouEm])
+  @@index([comecouEm])
+  @@map("coleta")
+  @@schema("ofertas")
+}
+
+/// O MOLDE. Uma linha = uma coisa vendável, como foi vista por último, sempre
+/// POR PESSOA. Passagem (econômica ou executiva, em milhas ou em reais) e pacote
+/// (aéreo + hotel) cabem aqui; o que a fonte não dá fica vazio.
+///
+/// `chave` identifica a oferta (fonte, rota, datas, classe…): vista de novo, a
+/// mesma linha é atualizada, nunca duas linhas para a mesma coisa.
+model Oferta {
+  id       BigInt  @id @default(autoincrement())
+  chave    String  @unique
+  fonteId  String  @map("fonte_id")
+  /// O pedido de busca que a trouxe (vazio = descoberta da fonte, ex.: mural do MD).
+  buscaId  Int?    @map("busca_id")
+  coletaId BigInt? @map("coleta_id")
+  /// passagem · pacote
+  tipo     String  @default("passagem")
+  /// Quanto se sabe: mes (só o menor preço do mês) · dia (datas e preço) · voo
+  /// (horários, voos, conexões, bagagem, taxas exatas).
+  detalhe  String
+
+  origem        String
+  origemCidade  String? @map("origem_cidade")
+  destino       String
+  destinoCidade String? @map("destino_cidade")
+  destinoUf     String? @map("destino_uf")
+  destinoPais   String? @map("destino_pais")
+  destinoRegiao String? @map("destino_regiao")
+  internacional Boolean
+
+  /// Mês de embarque, "2027-03": o agrupamento da vitrine e do "normal" da V2.
+  mes        String
+  ida        DateTime? @db.Date
+  volta      DateTime? @db.Date
+  noites     Int?
+  /// ida_volta (a fonte vende o par) · soma_trechos (a fonte cobra por trecho,
+  /// como a Smiles em milhas: a soma é o preço real) · so_ida
+  composicao String
+
+  /// economica · premium · executiva · primeira
+  classe        String   @default("economica")
+  /// Companhias (códigos IATA), a principal primeiro.
+  companhias    String[]
+  companhiaNome String?  @map("companhia_nome")
+
+  /// Em milhas (por pessoa, ida + volta): a tarifa do custo (Clube, se o
+  /// programa usa) e a normal, para comparar.
+  programaId         String?  @map("programa_id")
+  milhas             Int?
+  milhasNormal       Int?     @map("milhas_normal")
+  /// Taxas em reais. `taxasEstimadas` = ainda não vieram da fonte para esta data.
+  taxasBrl           Decimal? @map("taxas_brl") @db.Decimal(12, 2)
+  taxasEstimadas     Boolean  @default(false) @map("taxas_estimadas")
+  /// Preço em reais na fonte (passagem em dinheiro, pacote).
+  precoBrl           Decimal? @map("preco_brl") @db.Decimal(12, 2)
+  /// Referência: quanto a companhia cobra em dinheiro pelo mesmo voo.
+  precoReferenciaBrl Decimal? @map("preco_referencia_brl") @db.Decimal(12, 2)
+  /// Parcelas sem juros que a própria fonte oferece (operadora).
+  parcelasFonte      Int?     @map("parcelas_fonte")
+
+  /// despachada · so_mao · item_pessoal · nao_informada
+  bagagem    String @default("nao_informada")
+  bagagemQtd Int?   @map("bagagem_qtd")
+
+  /// Ida e volta: hora local do aeroporto, paradas, duração, voos ("G3 1417 + G3 1640").
+  idaSaida        DateTime? @map("ida_saida") @db.Timestamp(0)
+  idaChegada      DateTime? @map("ida_chegada") @db.Timestamp(0)
+  idaParadas      Int?      @map("ida_paradas")
+  idaDuracaoMin   Int?      @map("ida_duracao_min")
+  idaVoos         String?   @map("ida_voos")
+  voltaSaida      DateTime? @map("volta_saida") @db.Timestamp(0)
+  voltaChegada    DateTime? @map("volta_chegada") @db.Timestamp(0)
+  voltaParadas    Int?      @map("volta_paradas")
+  voltaDuracaoMin Int?      @map("volta_duracao_min")
+  voltaVoos       String?   @map("volta_voos")
+  /// O menor número de assentos restantes entre os trechos (as fontes param em 9).
+  assentos        Int?
+
+  /// Pacote: hotel, categoria (estrelas), regime, ocupação.
+  hotelNome      String?  @map("hotel_nome")
+  hotelCategoria Decimal? @map("hotel_categoria") @db.Decimal(2, 1)
+  /// all_inclusive · pensao_completa · meia_pensao · cafe · sem_refeicao
+  regime         String?
+  adultos        Int      @default(1)
+  criancas       Int      @default(0)
+  aceitaCrianca  Boolean? @map("aceita_crianca")
+  /// praia · cidade · serra · natureza · neve
+  estilo         String?
+
+  /// Características consultáveis, para casar com o gosto de um cliente no
+  /// futuro: "direto", "bagagem", "executiva", "all_inclusive", "praia"…
+  etiquetas String[]
+
+  /// Onde foi achado / onde emitir.
+  fornecedor String?
+  link       String?
+  /// O pedaço da resposta da fonte que gerou a oferta, para conferência.
+  dadosFonte Json?   @map("dados_fonte")
+
+  vistaPrimeiraEm DateTime  @default(now()) @map("vista_primeira_em") @db.Timestamptz(6)
+  vistaEm         DateTime  @default(now()) @map("vista_em") @db.Timestamptz(6)
+  detalhadaEm     DateTime? @map("detalhada_em") @db.Timestamptz(6)
+  /// Falso quando a fonte, buscada de novo, não mostrou mais esta oferta.
+  ativa           Boolean   @default(true)
+
+  busca Busca? @relation(fields: [buscaId], references: [id], onDelete: SetNull)
+
+  @@index([ativa, mes])
+  @@index([destino])
+  @@index([fonteId, ativa])
+  @@index([buscaId, ativa])
+  @@index([etiquetas], type: Gin)
+  @@map("oferta")
+  @@schema("ofertas")
+}
+
+/// O histórico: todo preço visto, um registro por item por dia (o menor e o
+/// último do dia). É daqui que a V2 tira o "normal" de cada rota em cada mês.
+///
+/// tipo: trecho (só ida, um dia: o calendário da Smiles) · ida_volta (um par de
+/// datas) · mes (o menor preço do mês).
+model PrecoObservado {
+  id         BigInt    @id @default(autoincrement())
+  /// fonte|tipo|origem|destino|classe|ida|volta: identifica o item.
+  chave      String
+  /// O dia (de Brasília) em que foi visto.
+  dia        DateTime  @db.Date
+  fonteId    String    @map("fonte_id")
+  tipo       String
+  origem     String
+  destino    String
+  classe     String
+  mes        String
+  ida        DateTime? @db.Date
+  volta      DateTime? @db.Date
+  /// milhas · brl
+  unidade    String
+  programaId String?   @map("programa_id")
+  minimo     Decimal   @db.Decimal(14, 2)
+  ultimo     Decimal   @db.Decimal(14, 2)
+  vezes      Int       @default(1)
+  companhia  String?
+  primeiraEm DateTime  @default(now()) @map("primeira_em") @db.Timestamptz(6)
+  ultimaEm   DateTime  @default(now()) @map("ultima_em") @db.Timestamptz(6)
+
+  @@unique([chave, dia])
+  @@index([origem, destino, mes, classe])
+  @@index([dia])
+  @@map("preco_observado")
+  @@schema("ofertas")
+}
+
+/// A fila do botão "Buscar agora". O painel só escreve o pedido; quem busca é o
+/// motor (é ele quem tem o navegador e o ritmo educado). Só um pedido pendente
+/// por busca (índice único parcial, na migração).
+model BuscaAgora {
+  id         BigInt    @id @default(autoincrement())
+  buscaId    Int       @map("busca_id")
+  pedidoEm   DateTime  @default(now()) @map("pedido_em") @db.Timestamptz(6)
+  /// na_fila · buscando · feito · erro
+  status     String    @default("na_fila")
+  comecouEm  DateTime? @map("comecou_em") @db.Timestamptz(6)
+  terminouEm DateTime? @map("terminou_em") @db.Timestamptz(6)
+  resumo     String?
+
+  busca Busca @relation(fields: [buscaId], references: [id], onDelete: Cascade)
+
+  @@index([status, pedidoEm])
+  @@map("busca_agora")
+  @@schema("ofertas")
+}

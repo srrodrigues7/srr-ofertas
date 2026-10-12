@@ -21,13 +21,15 @@
     "banco:conferir": "tsx scripts/conferir-banco.ts",
     "migrate:deploy": "prisma migrate deploy",
     "saude": "tsx scripts/ver-saude.ts",
-    "pacote:instalador": "node scripts/montar-pacote.mjs"
+    "pacote:instalador": "node scripts/montar-pacote.mjs",
+    "coletas": "tsx scripts/ver-coletas.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "next": "16.3.8",
     "pg": "8.23.0",
+    "playwright-core": "1.63.0",
     "prisma": "7.10.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
