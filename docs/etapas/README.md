@@ -31,7 +31,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | ---- | ----- | ---------- | ------- | ------ |
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aberta** |
-| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aberta** — fase 1 parte A (sem login) entregue; parte B (login) espera o Saulo |
+| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aberta** — fase 1 entregue (partes A e B); fase 2 espera a V1a |
 | V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
@@ -345,3 +345,58 @@ todas`, `--tipo pacotes|bloqueios`, `--so-ai`, `--json`) e
   de quarto (só duplo). Tabela completa na ficha.
 - Ainda **não** existe `docs/fontes/README.md` (resumo de todas as fontes):
   a V1a também investiga fontes; quem juntar faz o resumo, para não colidir.
+
+### V1b — Pacotes, fase 1 parte B: portal logado e caminho comercial (11/10/2026)
+
+**Decisões do Saulo:** o viajandocomdesconto é **canal oficial da Cativa** e
+vira a fonte principal; os **bloqueios entram na vitrine** junto com os
+pacotes (como passagem ida e volta, com assentos e prazo); conferir preço
+**não pode ser manual** — revalidador automático; **usuário só do robô** no
+portal; quando a oferta muda: **esgotou sai, preço mudou atualiza e marca**;
+na Hoteldo, só observar o portal e buscar o caminho comercial.
+
+**O que se achou** (fichas [cativa.md](../fontes/cativa.md),
+[hoteldo.md](../fontes/hoteldo.md) e o desenho
+[revalidador-cativa.md](../fontes/revalidador-cativa.md)):
+
+- **Cativa, portal do agente (Infotravel):** login com código por e-mail às
+  vezes (cookie de "dispositivo conhecido"), sessão cai em ~58 min parada. O
+  Saulo pode criar o usuário do robô em *Profissionais → Adicionar*. O portal
+  é JSF antigo: **sem chamada de dados limpa**. Busca de pacote só por **data
+  exata** (~20 s; estrelas, regime, tipo de quarto, quartos disponíveis,
+  preço por pessoa com taxas). Tela **Bloqueios de voo** confere uma rota
+  inteira num período (~5 s, com lugares disponíveis e deadline).
+- **Medido:** os bloqueios do viajandocomdesconto **batem exatamente** com o
+  portal; o pacote Enotel 17–24/11 estava **4% mais caro** no portal. O
+  revalidador é necessário para pacote.
+- **Revalidador — recomendação: A) navegador-robô agora** (único seguro para
+  pacote no portal JSF), **C) API Infotravel quando a Cativa liberar**. O
+  resultado e o "quando" são iguais nas três alternativas. **Não houve prova
+  de revalidação** nesta fase: o login tem código por e-mail e o usuário do
+  robô ainda não existe — fica para a fase 2, com o Saulo pondo as
+  credenciais no `.env`.
+- **Divulgação da SRR na Cativa:** artes PNG prontas com a marca da SRR,
+  por embarque — guardar para a **V4** (card).
+- **Hoteldo:** existe **API B2B oficial com documentação pública**
+  (api-docs.despegar.com: hotéis com estrelas, regime, tipo de quarto,
+  idade das crianças, comissão e "tarifa pública mínima"; voos; um serviço
+  de variação de preço; e um **MCP** para agentes de IA). **Pacote pela API
+  ainda não existe** ("em desenvolvimento"). O portal (inclusive o endereço
+  da SRR) tem anti-robô DataDome e `robots.txt` proibindo a busca: **não é
+  caminho para robô**. Texto do pedido ao gerente comercial pronto, com o
+  volume de emissão da SRR em branco para o Saulo preencher.
+
+**Para a fase 2 saber**
+
+- O molde da V1a precisa guardar, por oferta: quando foi conferida, preço
+  conferido, resultado (ok / mudou / esgotou / não deu), variação; e o que
+  acha a oferta no portal (código do pacote — vem no link de orçamento —,
+  origem, destino, datas, hotel; para bloqueio, o voo).
+- Um **de-para de destinos** viajandocomdesconto → lista do portal (233
+  destinos saindo de BSB).
+- O navegador-robô é dependência nova (Chrome do robô, ~150 MB) no
+  computador do motor.
+- Do Saulo, antes de ligar o revalidador: o usuário do robô criado no portal
+  com o e-mail da operação; usuário e senha no `.env`; e acesso de leitura à
+  caixa desse e-mail (provedor + senha de aplicativo), para o robô ler o
+  código.

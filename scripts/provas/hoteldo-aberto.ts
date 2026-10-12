@@ -1,12 +1,13 @@
 /*
  * Prova — Hoteldo não tem caminho sem login.
  *
- * Mostra, com três consultas leves, o que a investigação achou (detalhes em
+ * Mostra, com quatro consultas leves, o que a investigação achou (detalhes em
  * docs/fontes/hoteldo.md):
  *   1. o site recusa programas (403) e só abre num navegador depois de uma
  *      "verificação do dispositivo" — proteção anti-robô, que não contornamos;
  *   2. o robots.txt proíbe robôs justamente em pacotes, hotéis e passagens;
- *   3. a busca de verdade mora atrás do login de agência (e-agencias.com).
+ *   3. a busca de verdade mora atrás do login de agência (e-agencias.com);
+ *   4. existe a documentação pública da API B2B oficial (api-docs.despegar.com).
  *
  * Não envia senha nem formulário nenhum. Roda direto no Node 24:
  *
@@ -45,10 +46,15 @@ async function principal() {
   const login = await consultar("https://es-hoteldo.e-agencias.com/login");
   console.log(`3. Login de agência (e-agencias.com, plataforma da Despegar/Decolar): resposta ${login.status}${login.local ? ` → ${login.local}` : ""}`);
 
+  await espera(3000);
+  const docs = await consultar("https://api-docs.despegar.com/llms.txt");
+  const temHoteis = /API Reference: Hotels/i.test(docs.corpo);
+  console.log(`4. Documentação pública da API B2B (api-docs.despegar.com): resposta ${docs.status}${temHoteis ? " — tem hotéis, voos, reserva e pós-venda" : ""}`);
+
   console.log(
-    "\nConclusão: na Hoteldo não há página aberta de ofertas. Os caminhos são\n" +
-      "  (a) a integração oficial XML/API (pedido à Hoteldo — texto em docs/fontes/hoteldo.md), ou\n" +
-      "  (b) o portal logado da agência, investigado na parte B, com o Saulo entrando.\n",
+    "\nConclusão: na Hoteldo não há página aberta de ofertas, e o portal (inclusive o\n" +
+      "endereço da SRR) tem anti-robô e robots.txt proibindo a busca — não é caminho para robô.\n" +
+      "O caminho é a API B2B oficial: pedido ao gerente comercial em docs/fontes/hoteldo.md.\n",
   );
 }
 
