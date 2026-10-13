@@ -260,3 +260,17 @@
 .desligada {
   opacity: 0.55;
 }
+
+/* Os "ver voos": links com cara de botão. */
+a.botaoSecundario {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.acoes {
+  flex-wrap: wrap;
+}
+
+.tabela td:first-child {
+  white-space: nowrap;
+}

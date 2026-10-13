@@ -2,7 +2,8 @@ import Link from "next/link";
 import s from "./Cabecalho.module.css";
 
 const ABAS = [
-  { href: "/", rotulo: "Ofertas" },
+  { href: "/", rotulo: "Passagens" },
+  { href: "/pacotes", rotulo: "Pacotes" },
   { href: "/buscas", rotulo: "Pedidos de busca" },
   { href: "/valores", rotulo: "Valores" },
   { href: "/saude", rotulo: "Saúde" },

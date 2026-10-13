@@ -339,8 +339,14 @@ seção.
   "Buscar agora" e depois o que venceu — o mais atrasado (medido em
   intervalos) primeiro, meses próximos antes. Acorda em segundos quando alguém
   aperta "Buscar agora".
-- **Painel:** `/` Ofertas (agrupadas por rota + mês, filtros, custo, venda,
-  parcelas, fonte, "visto há", Buscar agora) · `/buscas` (pedidos: adicionar,
+- **Painel:** a vitrine em duas abas (`src/app/_componentes/Vitrine.tsx`):
+  `/` **Passagens** (filtros de classe e companhia; coluna "Voo" com companhia,
+  classe, bagagem, horários/conexões quando a fonte dá, assentos restantes e
+  "emitir até"; botões "ver voos" que abrem a busca já preenchida na fonte e no
+  Google Flights — só link para a pessoa, o sistema não lê nada de lá) e
+  `/pacotes` **Pacotes** (filtros de regime e noites; colunas de hotel, regime,
+  ocupação e aéreo; vazia até a V1b). Agrupadas por rota + mês, com custo,
+  venda, parcelas, fonte, conferência, "visto há", Buscar agora · `/buscas` (pedidos: adicionar,
   ligar/desligar, tirar, Buscar agora) · `/valores` (milheiro, margens, parcelas,
   faixas, fontes, ritmo) · `/saude` (a da O0). **Sem senha**: antes de publicar,
   a L protege — as ações que gravam estão em `src/app/acoes.ts`.
@@ -398,8 +404,11 @@ juros" pela tabela). Faltou valor → `faltas[]`, e a tela diz o quê.
 - Conector em `src/lib/coleta/fontes/`; tarefas no padrão de `passagens.ts` (ou
   num `pacotes.ts` irmão sobre `nucleo.ts`), chamado pelo motor ao lado de
   `coletarPassagens`. Escopos próprios (`pac:…`).
-- A tela ainda mostra colunas de voo: falta acrescentar as de pacote (hotel,
-  regime, noites, ocupação) e o seletor "tipo" (o filtro já existe em `lerVitrine`).
+- A aba **Pacotes** já existe (`tipo = 'pacote'`), com colunas de hotel,
+  categoria, regime, ocupação e aéreo, e filtros de regime e noites: basta gravar
+  as ofertas no molde. Os **bloqueios aéreos** vão como `tipo = 'passagem'` e
+  aparecem em Passagens, com assentos e "emitir até" visíveis e "(da fonte)" nas
+  parcelas da operadora.
 - `docs/fontes/README.md` nasceu aqui; a V1b acrescenta as linhas dela.
 
 **Para a V2 (nota)**

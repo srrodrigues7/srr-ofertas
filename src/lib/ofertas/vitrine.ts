@@ -11,12 +11,17 @@ import { lerValores, precificar, type Preco } from "./preco";
  */
 
 export type Filtros = {
+  /** A aba: passagem ou pacote. */
+  tipo: "passagem" | "pacote";
   destino?: string;
   origem?: string;
   fonte?: string;
   mes?: string;
-  tipo?: string;
+  /** Passagem: classe e companhia. Pacote: regime e noites. */
   classe?: string;
+  companhia?: string;
+  regime?: string;
+  noites?: string;
   ordem?: "preco" | "recente" | "destino" | "mes";
 };
 
@@ -60,6 +65,9 @@ export type ItemVitrine = {
   conferenciaVariacao: number | null;
   conferenciaMotivo: string | null;
   hotelNome: string | null;
+  hotelCategoria: number | null;
+  adultos: number;
+  criancas: number;
   regime: string | null;
   etiquetas: string[];
   fornecedor: string | null;
@@ -98,6 +106,9 @@ export type Vitrine = {
     origens: string[];
     fontes: { id: string; nome: string }[];
     meses: string[];
+    companhias: string[];
+    regimes: string[];
+    noites: number[];
   };
   faltasGerais: string[];
 };
@@ -112,24 +123,29 @@ function valorDe(i: ItemVitrine): number {
 export async function lerVitrine(f: Filtros): Promise<Vitrine> {
   const cfg = await lerConfiguracao(["ofertas.validade_horas"]);
   const desde = new Date(Date.now() - cfg["ofertas.validade_horas"] * 3_600_000);
-  const onde: Prisma.OfertaWhereInput = { ativa: true, vistaEm: { gte: desde } };
+  // A base de cada aba (passagem ou pacote): as opções dos filtros saem dela.
+  const base: Prisma.OfertaWhereInput = { ativa: true, vistaEm: { gte: desde }, tipo: f.tipo };
+  const onde: Prisma.OfertaWhereInput = { ...base };
   if (f.destino) onde.destino = f.destino;
   if (f.origem) onde.origem = f.origem;
   if (f.fonte) onde.fonteId = f.fonte;
   if (f.mes) onde.mes = f.mes;
-  if (f.tipo) onde.tipo = f.tipo;
   if (f.classe) onde.classe = f.classe;
+  if (f.companhia) onde.companhias = { has: f.companhia };
+  if (f.regime) onde.regime = f.regime;
+  if (f.noites) onde.noites = Number(f.noites) || undefined;
 
-  const [linhas, valores, destinos, origens, meses] = await Promise.all([
+  const [linhas, valores, destinos, origens, meses, companhias, regimes, noites] = await Promise.all([
     prisma.oferta.findMany({ where: onde }),
     lerValores(),
-    prisma.oferta.groupBy({
-      by: ["destino", "destinoCidade"],
-      where: { ativa: true, vistaEm: { gte: desde } },
-      orderBy: { destinoCidade: "asc" },
-    }),
-    prisma.oferta.groupBy({ by: ["origem"], where: { ativa: true, vistaEm: { gte: desde } }, orderBy: { origem: "asc" } }),
-    prisma.oferta.groupBy({ by: ["mes"], where: { ativa: true, vistaEm: { gte: desde } }, orderBy: { mes: "asc" } }),
+    prisma.oferta.groupBy({ by: ["destino", "destinoCidade"], where: base, orderBy: { destinoCidade: "asc" } }),
+    prisma.oferta.groupBy({ by: ["origem"], where: base, orderBy: { origem: "asc" } }),
+    prisma.oferta.groupBy({ by: ["mes"], where: base, orderBy: { mes: "asc" } }),
+    prisma.$queryRaw<{ c: string }[]>`
+      SELECT DISTINCT unnest(companhias) AS c FROM "ofertas"."oferta"
+       WHERE ativa AND tipo = ${f.tipo} AND vista_em >= ${desde} ORDER BY 1`,
+    prisma.oferta.groupBy({ by: ["regime"], where: { ...base, regime: { not: null } }, orderBy: { regime: "asc" } }),
+    prisma.oferta.groupBy({ by: ["noites"], where: { ...base, noites: { not: null } }, orderBy: { noites: "asc" } }),
   ]);
 
   const grupos = new Map<string, GrupoVitrine>();
@@ -175,6 +191,9 @@ export async function lerVitrine(f: Filtros): Promise<Vitrine> {
       conferenciaVariacao: num(o.conferenciaVariacao),
       conferenciaMotivo: o.conferenciaMotivo,
       hotelNome: o.hotelNome,
+      hotelCategoria: num(o.hotelCategoria),
+      adultos: o.adultos,
+      criancas: o.criancas,
       regime: o.regime,
       etiquetas: o.etiquetas,
       fornecedor: o.fornecedor,
@@ -275,6 +294,9 @@ export async function lerVitrine(f: Filtros): Promise<Vitrine> {
       origens: origens.map((o) => o.origem),
       fontes: [...valores.fontes.entries()].map(([id, v]) => ({ id, nome: v.nome })),
       meses: meses.map((m) => m.mes),
+      companhias: companhias.map((c) => c.c),
+      regimes: regimes.map((r) => r.regime!).filter(Boolean),
+      noites: noites.map((n) => n.noites!).filter((n) => n != null),
     },
     faltasGerais: [...faltasGerais],
   };
