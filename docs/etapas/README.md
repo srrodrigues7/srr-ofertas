@@ -30,7 +30,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | #    | Etapa | Depende de | Esforço | Estado |
 | ---- | ----- | ---------- | ------- | ------ |
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
-| V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aberta** |
+| V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **entregue — esperando revisão** (só no computador) |
 | V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aberta** — fase 1 entregue (partes A e B); fase 2 espera a V1a |
 | V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
@@ -299,6 +299,146 @@ seção.
 7. **Senha do papel na produção:** está em `.env.producao`, só neste
    computador. Se esse arquivo se perder, rode de novo `banco:preparar --alvo
    producao` (gera senha nova) e o SQL.
+
+### V1a — Vitrine: passagens (entregue só no computador, 11–12/10/2026)
+
+**Decisões do Saulo nesta etapa**
+
+- Custo em milhas Smiles pela tarifa **Clube** (caixa "Clube" do programa, em Valores).
+- Smiles **por endpoint**: só o **calendário aberto**, com **taxa estimada**
+  (Valores) e aviso na tela. A busca completa e a taxa de embarque ficam atrás
+  do Akamai; o caminho pelo Edge com janela foi **removido na revisão** (usar um
+  acesso porque ele passa pela proteção é contorná-la — regra da casa). O
+  caminho legítimo é pedir acesso à Smiles: texto pronto em `docs/fontes/smiles.md`.
+- Preço do **Melhores Destinos é custo + margem** (como milhas), com as parcelas do link.
+- Parcelas: tabela editável; começa com **4× "sem juros" com 10% embutidos**
+  (total = venda × 1,10).
+- Da sessão de controle: "o que buscar" é uma lista de **pedidos de busca** (com
+  dono — hoje "agencia"); a oferta guarda **características consultáveis**
+  (etiquetas, regime, estilo…); o **núcleo do coletor é genérico** (não sabe
+  que coleta passagem).
+
+**O que existe**
+
+- **Fichas:** `docs/fontes/smiles.md`, `melhores-destinos.md`, `README.md`.
+  Migração `…_smiles_sem_navegador`: tira as chaves do detalhe, desliga os 2
+  pedidos de executiva (nenhuma fonte dá executiva hoje) e tira da vitrine o que
+  veio pela busca completa.
+- **Banco** (migração `20261012020244_vitrine`, **aplicada só no banco de
+  testes**): `fonte`, `programa`, `lugar`, `busca` (pedidos), `faixa_busca`,
+  `margem`, `parcela_taxa`, `coleta`, `oferta` (o molde), `preco_observado`
+  (histórico), `busca_agora` (fila do botão) + 23 chaves novas em
+  `configuracao`. Cadastro inicial: 2 fontes, 4 programas (**milheiro vazio**:
+  quem preenche é o Saulo), 3 faixas (10 meses), margens 15%/R$ 150, 4×10%,
+  ~70 lugares, 27 pedidos (15 nacionais de BSB, 10 internacionais de GRU, 2 de executiva).
+- **Coletor** (`src/lib/coleta/`): `nucleo.ts` (genérico: executar, registrar
+  em `coleta`, vencimento por escopo, pausa de fonte que bloqueia),
+  `passagens.ts` (as tarefas), `fontes/smiles.ts`, `fontes/melhores-destinos.ts`,
+  `gravar.ts` (o único caminho até o banco), `molde.ts`.
+- **Motor:** cada passada (até `coleta.max_segundos_por_passada`) atende o
+  "Buscar agora" e depois o que venceu — o mais atrasado (medido em
+  intervalos) primeiro, meses próximos antes. Acorda em segundos quando alguém
+  aperta "Buscar agora".
+- **Painel:** a vitrine em duas abas (`src/app/_componentes/Vitrine.tsx`):
+  `/` **Passagens** (filtros de classe e companhia; coluna "Voo" com companhia,
+  classe, bagagem, horários/conexões quando a fonte dá, assentos restantes e
+  "emitir até"; botões "ver voos" que abrem a busca já preenchida na fonte e no
+  Google Flights — só link para a pessoa, o sistema não lê nada de lá) e
+  `/pacotes` **Pacotes** (filtros de regime e noites; colunas de hotel, regime,
+  ocupação e aéreo; vazia até a V1b). Agrupadas por rota + mês, com custo,
+  venda, parcelas, fonte, conferência, "visto há", Buscar agora · `/buscas` (pedidos: adicionar,
+  ligar/desligar, tirar, Buscar agora) · `/valores` (milheiro, margens, parcelas,
+  faixas, fontes, ritmo) · `/saude` (a da O0). **Sem senha**: antes de publicar,
+  a L protege — as ações que gravam estão em `src/app/acoes.ts`.
+- `npm run coletas` mostra as últimas coletas e o tamanho da vitrine.
+
+**Provado no banco (e na tela)**
+
+- Primeira hora: ~560 ofertas, ~2.400 preços no histórico, zero erro. Mural do
+  MD de BSB: 136 destinos.
+- "Buscar agora" BSB→Salvador: 13 buscas em 92 s (3 calendários Smiles, 10
+  meses do MD); clicar de novo não duplica (índice único parcial).
+- Depois da revisão: passada sem navegador, calendários da Smiles ok
+  (ex.: BSB→REC jan–mar, a partir de 27.700 milhas + taxa estimada).
+- Dois motores ligados (sem querer: no Windows, parar o `npm` não derruba o
+  processo filho): só um trabalhou, o outro esperou a vez. **Desligue o motor
+  com Ctrl+C no terminal dele.**
+- `RADAR_SIMULAR_FALHA=smiles`: cada coleta da Smiles registrou erro, o MD
+  seguiu (69 coletas ok) e as passadas continuaram "ok".
+- `npm run check` passa.
+
+**O molde de oferta (`ofertas.oferta`) — para a V1b, a V2 e a V3.x**
+
+Uma linha = uma coisa vendável, **por pessoa**, como foi vista por último. Toda
+fonte entrega `OfertaNova` (`src/lib/coleta/molde.ts`) e grava por
+`gravarOfertas` (`gravar.ts`) — nunca por outro caminho.
+
+| grupo | campos | observação |
+|---|---|---|
+| identidade | `chave` (única), `fonte_id`, `busca_id`, `coleta_id`, `tipo` (passagem/pacote), `detalhe` (mes/dia/voo) | chave = fonte·tipo·origem·destino·classe·datas (pacote soma hotel·regime·adultos·crianças): vista de novo, atualiza |
+| rota | `origem`, `destino` (+ cidade, UF, país, região), `internacional` | o que a fonte não diz, `gravar` completa pelo cadastro `lugar` |
+| quando | `mes` ("2027-03", obrigatório), `ida`, `volta`, `noites`, `composicao` (ida_volta · soma_trechos · so_ida) | nunca apresentar soma de pernas em dinheiro como ida e volta |
+| preço | `programa_id` + `milhas` (+ `milhas_normal`) + `taxas_brl` (+ `taxas_estimadas`) **ou** `preco_brl`; `preco_referencia_brl`; `parcelas_fonte` | por pessoa, ida + volta |
+| voo | `classe`, `companhias[]`, `companhia_nome`, `bagagem` (+ qtd); ida/volta: saída, chegada (hora local do aeroporto, `timestamp` sem fuso), paradas, duração, voos; `assentos` | o que a fonte não der fica `null` |
+| **pacote** | `hotel_nome`, `hotel_categoria`, `regime` (all_inclusive · pensao_completa · meia_pensao · cafe · sem_refeicao), `adultos`, `criancas`, `aceita_crianca`, `estilo` | **a V1b preenche aqui**; `tipo = 'pacote'`, `composicao = 'ida_volta'` |
+| gosto do cliente | `etiquetas[]` (índice GIN): direto, bagagem, executiva, milhas, internacional, o regime, o estilo | `etiquetasDeduzidas()` acrescenta as óbvias; a fonte pode pôr outras (palavras fixas) |
+| conferência (revalidação) | `conferida_em`, `conferencia_resultado` (ok · mudou · esgotou · nao_deu), `conferencia_anterior`, `conferencia_valor`, `conferencia_variacao` (%), `conferencia_motivo`, `localizador` (JSON para achar a mesma oferta de novo na fonte), `emitir_ate` | grave só por `registrarConferencia()` (`gravar.ts`): esgotou → sai da vitrine; mudou → atualiza o preço e marca a variação; não deu → sem selo. `podeSerAprovada()` só aceita ok/mudou (a V4 usa). Se a coleta vê preço diferente, o selo antigo cai. Migração `…_conferencia` (só no banco de testes) |
+| vida | `vista_primeira_em`, `vista_em`, `detalhada_em`, `ativa`, `fornecedor`, `link`, `dados_fonte` | `desativarAusentes()` tira da vitrine o que a fonte, buscada de novo, não mostrou; a faxina tira o que passou de `ofertas.validade_horas` |
+
+**Preço** (`src/lib/ofertas/preco.ts`, `precificar()` — use sempre esta):
+custo (milhas ÷ 1000 × milheiro + taxas, ou o preço em R$) → venda (se a fonte
+`aplica_margem`: custo + o maior entre % e mínimo da margem do tipo — nacional,
+internacional, executiva, **pacote**; se não, venda = preço da fonte) →
+parcelas (as da fonte, se ela oferece e não aplica margem; senão "N× sem
+juros" pela tabela). Faltou valor → `faltas[]`, e a tela diz o quê.
+
+**Para a V1b plugar os pacotes**
+
+- Fonte em `ofertas.fonte` (migração): `tipo = 'operadora'`,
+  `aplica_margem = false` (RAV embutida → o preço é a venda); `parcelas_fonte`
+  em cada oferta.
+- **Bloqueio aéreo da Cativa entra como PASSAGEM**: `tipo = 'passagem'`,
+  `composicao = 'ida_volta'`, `assentos`, `emitir_ate`, voos em
+  `ida_voos`/`volta_voos`, e o `localizador` com o voo. Pacote: `localizador`
+  com código do pacote, origem, destino, datas e hotel.
+- Conector em `src/lib/coleta/fontes/`; tarefas no padrão de `passagens.ts` (ou
+  num `pacotes.ts` irmão sobre `nucleo.ts`), chamado pelo motor ao lado de
+  `coletarPassagens`. Escopos próprios (`pac:…`).
+- A aba **Pacotes** já existe (`tipo = 'pacote'`), com colunas de hotel,
+  categoria, regime, ocupação e aéreo, e filtros de regime e noites: basta gravar
+  as ofertas no molde. Os **bloqueios aéreos** vão como `tipo = 'passagem'` e
+  aparecem em Passagens, com assentos e "emitir até" visíveis e "(da fonte)" nas
+  parcelas da operadora.
+- `docs/fontes/README.md` nasceu aqui; a V1b acrescenta as linhas dela.
+
+**Para a V2 (nota)**
+
+- Histórico em `preco_observado`, um registro por item por dia (menor e último
+  do dia): `trecho` (Smiles, cada dia, cada sentido, milhas Clube), `ida_volta`
+  e `mes` (MD, R$). O calendário da Smiles também manda `priceRange`/`Quartil`
+  (a faixa "normal" dela) — não guardado ainda; ver a ficha.
+- Preferências de voo: `ida_saida`/`volta_saida` (hora local), paradas,
+  duração, bagagem — só nas ofertas `detalhe = 'voo'`.
+
+**Para a V3.x (fonte nova):** ficha em `docs/fontes/`, conector que devolve
+`OfertaNova`/`PrecoNovo`, tarefas com escopo e intervalo, linha em `fonte`.
+Requisição sempre por `pedirJson` (prazo, contagem, "bloqueado" em 403/406/429).
+
+**Ficou de fora / atenção**
+
+- Pedido com destino **país/região** existe na tabela, mas o motor só busca
+  destino **cidade** por enquanto.
+- **Executiva: nenhuma fonte dá hoje** (o calendário da Smiles e o MD são
+  econômica). Os pedidos de executiva ficam guardados e desligados; voltam com
+  uma fonte nova (V3.x) ou com o acesso oficial da Smiles.
+- Smiles sem horário, voo, conexões, bagagem nem taxa real: as ofertas dela são
+  `detalhe = 'dia'` com taxa estimada. As preferências de voo da V2 só valem
+  para fontes que derem esses campos.
+- O mural do MD (descoberta além dos pedidos) guarda a lista de cidades **na
+  memória do motor**: religado, ele varre o mural de novo antes.
+- **Produção:** a migração `vitrine` ainda não foi aplicada lá.
+- **Falta o Saulo preencher o milheiro Smiles** (Valores): sem ele, as ofertas
+  em milhas aparecem com "falta preço do milheiro" e vão para o fim da lista.
 
 ### V1b — Pacotes, fase 1 parte A: investigar sem login (11/10/2026)
 

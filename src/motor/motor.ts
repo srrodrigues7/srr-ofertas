@@ -2,9 +2,10 @@
  * O motor do SRR Ofertas.
  *
  * Roda no computador dedicado, de pé o tempo todo, e faz uma "passada" a cada
- * intervalo (`motor.intervalo_s`). Nesta etapa a passada só prova que roda: o
- * banco responde e o registro fica gravado. As etapas seguintes penduram aqui
- * a coleta, o preço normal, a nota.
+ * intervalo (`motor.intervalo_s`). A passada vai às fontes (src/lib/coleta:
+ * primeiro o "Buscar agora", depois o que estiver vencido, até o tempo da
+ * passada acabar) e grava o que achou. As etapas seguintes penduram aqui o
+ * preço normal e a nota.
  *
  * Três regras guiam o desenho:
  *
@@ -118,12 +119,14 @@ async function principal(): Promise<number> {
 
   // Só depois de conferir o .env: o módulo do banco recusa subir sem ele.
   const { prisma } = await import("@/lib/prisma");
-  const { lerConfiguracao, CHAVES_DO_MOTOR } = await import("@/lib/configuracao");
+  const { lerConfiguracao, CHAVES_DO_MOTOR, CHAVES_DA_COLETA } = await import("@/lib/configuracao");
   const trava = await import("@/lib/motor/trava");
+  const coleta = await import("@/lib/coleta/passagens");
 
   if (SO_CONFERIR) {
     await prisma.$queryRaw`SELECT 1`;
     await lerConfiguracao(CHAVES_DO_MOTOR);
+    await lerConfiguracao([...CHAVES_DA_COLETA, "coleta.max_segundos_por_passada", "coleta.pedidos_a_cada_s"]);
     log.info("Conferência ok: .env, banco e configuração estão completos.");
     await prisma.$disconnect();
     return 0;
@@ -233,10 +236,12 @@ async function principal(): Promise<number> {
     let erro: string | null = null;
 
     try {
-      // A prova de vida desta etapa. A O2 troca isto pela coleta.
-      const t = performance.now();
-      await prisma.$queryRaw`SELECT 1`;
-      resumo = `Passada de prova: o banco respondeu em ${Math.round(performance.now() - t)} ms.`;
+      // A coleta (V1a): "Buscar agora" primeiro, depois o que estiver vencido,
+      // até o tempo da passada acabar. Falta de configuração da coleta vira
+      // erro da passada (a Saúde mostra qual chave falta); o motor continua
+      // de pé, batendo, e tenta de novo na próxima.
+      const { "coleta.max_segundos_por_passada": maxS } = await lerConfiguracao(["coleta.max_segundos_por_passada"]);
+      resumo = await coleta.coletarPassagens({ ate: Date.now() + maxS * 1000, log });
 
       if (Date.now() - ultimaFaxina > FAXINA_MS) {
         ultimaFaxina = Date.now();
@@ -248,6 +253,8 @@ async function principal(): Promise<number> {
         await prisma.$executeRaw`
           DELETE FROM "ofertas"."motor_instancia" WHERE visto_em < now() - interval '7 days'`;
         if (apagadas) resumo += ` Faxina: ${apagadas} passada(s) com mais de ${dias} dias apagada(s).`;
+        const daColeta = await coleta.faxinaDaColeta();
+        if (daColeta) resumo += ` Faxina: ${daColeta}.`;
       }
     } catch (e) {
       status = "erro";
@@ -282,7 +289,19 @@ async function principal(): Promise<number> {
       }
       log.erro(`Volta do motor falhou: ${mensagemDe(e)}`);
     }
-    await esperar(cfg["motor.intervalo_s"] * 1000);
+    // Espera a próxima passada, mas acorda antes se alguém apertar "Buscar
+    // agora" no painel (olha a fila a cada `coleta.pedidos_a_cada_s`).
+    const acordarEm = Date.now() + cfg["motor.intervalo_s"] * 1000;
+    while (!parando && Date.now() < acordarEm) {
+      let passoS = 5;
+      try {
+        passoS = (await lerConfiguracao(["coleta.pedidos_a_cada_s"]))["coleta.pedidos_a_cada_s"];
+        if (souDono && (await coleta.haPedidoNaFila())) break;
+      } catch {
+        // banco instável: a passada seguinte registra o problema
+      }
+      await esperar(Math.min(passoS * 1000, Math.max(0, acordarEm - Date.now())));
+    }
   }
 
   // --- saída ------------------------------------------------------------------
