@@ -27,6 +27,16 @@ export async function buscarAgora(buscaId: number) {
   refresh();
 }
 
+/** "Conferir agora" (V1b): o robô confere a oferta no portal da fonte. Entra na
+ *  fila; o motor atende. Clicar de novo não duplica (índice único parcial). */
+export async function conferirAgora(ofertaId: string) {
+  if (!/^\d{1,19}$/.test(ofertaId)) throw new Error("Oferta inválida.");
+  await prisma.$executeRaw`
+    INSERT INTO "ofertas"."conferencia_pedido" (oferta_id, motivo) VALUES (${BigInt(ofertaId)}, 'botao')
+    ON CONFLICT DO NOTHING`;
+  refresh();
+}
+
 export async function salvarBusca(f: FormData) {
   const origem = codigo(texto(f, "origem"));
   const destino = codigo(texto(f, "destino"));

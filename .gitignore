@@ -10,3 +10,6 @@ logs/
 next-env.d.ts
 src/generated/
 pacote/
+
+# Sessão do robô no portal da operadora (cookies de login): nunca no commit.
+.dados/

@@ -31,7 +31,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | ---- | ----- | ---------- | ------- | ------ |
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aprovada** (só no computador) |
-| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **fase 1 aprovada; fase 2 aberta** |
+| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **fase 2 entregue** (Cativa no ar; o revalidador espera o usuário do robô) |
 | V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
@@ -557,3 +557,76 @@ o painel de ofertas tem **duas abas** (a V1a está fazendo a divisão):
 até"), ao lado das passagens da Smiles e do Melhores Destinos. Isto substitui
 a anotação de 12/10, que tirava os bloqueios da vitrine. "Bloqueio + hotel"
 continua em **No radar**, como melhoria futura.
+
+### V1b — fase 2: a Cativa na vitrine e o revalidador (entregue só no computador, 14/10/2026)
+
+**Decisões do Saulo nesta fase:** preço de pacote e bloqueio = **total por
+pessoa com a taxa** (as parcelas sobre o total); e-mail da operação no
+**Gmail**; até a V2, o robô confere sozinho as **3 mais baratas de cada
+destino** + botão **"Conferir agora"**; saídas = **BSB tudo + internacional de
+GRU/GIG**. A **Hoteldo ficou de fora** (sem chave de API — decisão do Saulo
+via sessão de controle): nada construído, nenhum aviso dela na tela.
+
+**O que existe** (detalhes em [cativa.md](../fontes/cativa.md) e
+[revalidador-cativa.md](../fontes/revalidador-cativa.md))
+
+- **Banco** (migração `20261015015437_cativa`, **aplicada só no banco de
+  testes**): fonte `cativa` (operadora, sem margem), `conferencia_pedido` (a
+  fila do "Conferir agora", com trava contra clique duplo), `fonte_acesso` (o
+  estado do login do robô) e 12 chaves novas (`cativa.*`, `revalidador.*`).
+- **Coletor:** `src/lib/coleta/fontes/cativa.ts` + `src/lib/coleta/pacotes.ts`
+  (irmão de `passagens.ts`), chamado pelo motor depois das passagens.
+  `npm run cativa` roda uma leitura à mão.
+- **Revalidador:** `src/lib/revalidador/` — o robô no portal (Edge do Windows,
+  invisível, `playwright-core` 1.63.0), o leitor do código no Gmail
+  (`imapflow` 2.0.6, só leitura) e o organizador, chamado pelo motor depois da
+  coleta. Sem as credenciais fica **desligado** e a Saúde diz o que falta.
+- **Painel:** pacotes agrupados pelo destino do pacote (não pelo aeroporto);
+  "aéreo incluso", "criança grátis", "(com taxa de R$ X)"; botão "Conferir
+  agora" nas ofertas de fonte com portal; "emitir até" no relógio de Brasília
+  (corrigido: mostrava a hora de Greenwich; quando a fonte só dá o dia, mostra
+  só o dia); a linha do voo não mostra mais "null paradas". Saúde: bloco
+  **Operadoras**.
+- **Regra nova no `gravar.ts`:** conferência que corrigiu o preço vale sobre
+  o preço velho que a fonte da vitrine ainda repete (evita o vaivém).
+
+**Provado no banco (e na tela)**
+
+- Leitura da Cativa: 216 pacotes e 781 bloqueios na vitrine (BSB + GRU
+  internacional), 1 requisição, ~30 s; "mudou?" funcionando (página igual =
+  não baixa de novo). Exemplos: Enotel all inclusive 17–24/11 R$ 9.949 (10x
+  da Cativa), agrupado em Porto de Galinhas, Nordeste, praia; GOL BSB–Recife
+  R$ 719 com taxa, horários, 20 assentos, "emitir até".
+- Motor com o código novo: passada 47 ok com "Cativa: vitrine lida" e o
+  revalidador atendendo o "Conferir agora" ("falta configurar o login do
+  robô"); passada 48 sem a Cativa (só vence de 3 em 3 h).
+- Revalidador: 16 testes das leituras com o texto real do portal; o Edge
+  invisível abre o portal e acha os campos de login.
+- `npm run check` passa.
+
+**Ficou de fora / atenção**
+
+- **O revalidador não rodou de verdade no portal**: falta o Saulo (1) criar o
+  usuário do robô (Profissionais → Adicionar, Vendedor agência, e-mail da
+  operação), (2) criar a senha de app do Gmail da operação e (3) pôr as 4
+  linhas no `.env` (modelo no `.env.example`). A tela do código (`auth.xhtml`)
+  nunca foi vista por dentro: o primeiro login pode pedir ajuste.
+- **Motor órfão no Windows:** parar o terminal do motor da V1a deixou o
+  processo vivo (9676) segurando a trava; a sessão de controle encerrou à
+  mão. Para a etapa L: o vigia/instalador precisa garantir que não sobra
+  motor órfão.
+- Bloqueio: as parcelas são as da tabela da casa (a página não diz se a
+  Cativa parcela bloqueio) — confirmar com o Saulo.
+- Pacotes com mais de um destino (Cartagena + San Andrés, Peru + Colômbia)
+  ficam fora: a Cativa não diz o destino.
+- **Produção:** a migração `cativa` ainda não foi aplicada lá.
+
+**Para a V2 saber**
+
+- Os bloqueios da Cativa vão para `preco_observado` (ida_volta, R$, por par
+  de datas): calendário de preço normal nas rotas com bloqueio.
+- Pacote não grava histórico ainda (o preço depende do hotel); se a V2 quiser
+  "preço normal" de pacote, a chave natural é destino do pacote + regime +
+  noites + mês.
+- O revalidador confere "as N mais baratas por destino": troque essa escolha
+  (`enfileirarAutomaticas` em `revalidador.ts`) por "as N de nota mais alta".

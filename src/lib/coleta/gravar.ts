@@ -119,13 +119,39 @@ export async function gravarOfertas(ofertas: OfertaNova[], coletaId: bigint | nu
   const chaves = [...porChave.keys()];
   const existentes = await prisma.oferta.findMany({
     where: { chave: { in: chaves } },
-    select: { chave: true, detalhe: true, milhas: true, precoBrl: true },
+    select: {
+      chave: true,
+      detalhe: true,
+      milhas: true,
+      precoBrl: true,
+      conferidaEm: true,
+      conferenciaResultado: true,
+      conferenciaAnterior: true,
+    },
   });
   const jaTem = new Map(existentes.map((e) => [e.chave, e]));
+  const umDia = Date.now() - 24 * 60 * 60_000;
 
   const operacoes = chaves.map((chave) => {
     const o = porChave.get(chave)!;
     const antes = jaTem.get(chave);
+    // A conferência (V1b) corrigiu o preço e a fonte da vitrine ainda repete o
+    // preço VELHO (ex.: a página da Cativa, republicada de dias em dias): fica
+    // valendo o conferido. Sem isto, a coleta desfaria a correção e o robô
+    // voltaria ao portal a cada leitura.
+    if (
+      antes &&
+      antes.conferenciaResultado === "mudou" &&
+      antes.conferidaEm &&
+      antes.conferidaEm.getTime() > umDia &&
+      antes.conferenciaAnterior != null &&
+      antes.conferenciaAnterior.toNumber() === valorDe(o)
+    ) {
+      return prisma.oferta.update({
+        where: { chave },
+        data: { vistaEm: new Date(), ativa: true, coletaId, buscaId: o.buscaId ?? undefined },
+      });
+    }
     if (
       antes &&
       antes.detalhe === "voo" &&

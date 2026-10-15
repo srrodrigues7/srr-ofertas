@@ -40,3 +40,14 @@ export function nomeDaCompanhia(codigo: string | null | undefined): string | nul
   if (!codigo) return null;
   return NOMES[codigo] ?? codigo;
 }
+
+/** O caminho inverso, para fonte que só dá o nome ("GOL", "Turkish Airlines").
+ *  Nome desconhecido: `null` (a oferta fica com o nome e sem código). */
+export function codigoDaCompanhia(nome: string | null | undefined): string | null {
+  const alvo = semAcento(nome ?? "");
+  if (!alvo) return null;
+  for (const [codigo, n] of Object.entries(NOMES)) if (semAcento(n) === alvo) return codigo;
+  return null;
+}
+
+const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();

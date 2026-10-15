@@ -8,6 +8,19 @@ const semana = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC", weekday: "sho
 const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
 const mesAno = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC", month: "long", year: "numeric" });
 
+/**
+ * Um prazo de verdade (com fuso, como "emitir até"), no relógio de Brasília.
+ * Meia-noite em ponto = a fonte só deu o dia: mostra só o dia.
+ */
+const prazoDia = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short", day: "2-digit", month: "2-digit" });
+const prazoHora = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+export function prazo(d: Date | null | undefined): string {
+  if (!d) return "—";
+  const dia = prazoDia.format(d).replace(".", "").replace(",", "");
+  const h = prazoHora.format(d);
+  return h === "00:00" ? dia : `${dia} ${h}`;
+}
+
 export const reais = (v: number | null | undefined) => (v == null ? "—" : brl.format(v));
 export const reaisInteiro = (v: number | null | undefined) => (v == null ? "—" : brlInteiro.format(v));
 export const milhas = (v: number | null | undefined) => (v == null ? "—" : `${inteiro.format(v)} mi`);

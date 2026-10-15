@@ -204,3 +204,13 @@
   font-size: 13px;
   text-align: center;
 }
+
+/* V1b — operadoras e revalidador */
+.etqAlerta {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.etqCrit {
+  background: var(--crit-soft);
+  color: var(--crit);
+}
