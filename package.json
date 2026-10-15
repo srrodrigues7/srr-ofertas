@@ -21,7 +21,8 @@
     "banco:conferir": "tsx scripts/conferir-banco.ts",
     "migrate:deploy": "prisma migrate deploy",
     "saude": "tsx scripts/ver-saude.ts",
-    "pacote:instalador": "node scripts/montar-pacote.mjs"
+    "pacote:instalador": "node scripts/montar-pacote.mjs",
+    "coletas": "tsx scripts/ver-coletas.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
