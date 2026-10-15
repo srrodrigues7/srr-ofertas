@@ -18,3 +18,11 @@ Já em andamento na V1a: **Smiles** e **Melhores Destinos**.
 Ordem sugerida para a V3.x, depois da primeira vitrine: Azul Viagens (cadastro
 pronto e marca forte em BSB), Expedia TAAP (programa de afiliados costuma ter
 caminho oficial de integração), Pátria (parceria nova).
+
+## Situação (14/10/2026)
+
+- **Hoteldo: de fora por enquanto.** Não haverá chave de API, e o portal tem
+  proteção anti-robô (DataDome) e `robots.txt` proibindo a busca. Volta quando
+  houver outro caminho legítimo (ex.: extensão que captura o que a equipe vê,
+  ou e-mails de promoção).
+- **Pátria, Azul Viagens e Expedia TAAP:** investigação aberta na V3a.
