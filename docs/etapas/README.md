@@ -300,6 +300,7 @@ seção.
 7. **Senha do papel na produção:** está em `.env.producao`, só neste
    computador. Se esse arquivo se perder, rode de novo `banco:preparar --alvo
    producao` (gera senha nova) e o SQL.
+8. **Motor órfão no Windows:** parar o `npm run motor` (ou o processo pai) **não derruba o `node` filho** — o motor continua vivo, segurando a trava (visto em 14/10, processo de ~750 MB). No computador dedicado, o vigia e o desinstalador precisam encerrar a **árvore** de processos (`taskkill /T`), e o README deve ensinar a parar o motor de verdade.
 
 ### V1a — Vitrine: passagens (entregue só no computador, 11–12/10/2026)
 
