@@ -30,6 +30,8 @@ import {
  */
 
 const CATIVA = "cativa";
+/** "Somente para Passagens Aéreas: parcelamento em até 6x sem juros" (Cativa). */
+const PARCELAS_PASSAGEM_CATIVA = 6;
 const HORA = 60 * 60_000;
 
 export async function coletarPacotes(opcoes: { ate: number; log: Log }): Promise<string> {
@@ -250,7 +252,9 @@ function ofertaDePacote(
     aceitaCrianca: crianca ? true : null,
     etiquetas,
     fornecedor: "Cativa",
-    link: `${ENDERECO_CATIVA}#pacote=${encodeURIComponent(p.slug)}&saida=${s.iata}`,
+    // O orçamento do pacote no sistema da Cativa (o "Abrir na Cativa" da vitrine);
+    // sem ele, a página do pacote na vitrine aberta.
+    link: s.link || linkDaVitrine(p.slug, s.iata),
     localizador: {
       pacote: p.src || p.nome,
       nome: p.nome,
@@ -269,7 +273,7 @@ function ofertaDePacote(
       cotadoEm: s.divulgacao || null,
       criancaGratis: crianca,
       aereo: { de: reais(s.de), por: reais(s.por) },
-      orcamento: s.link || null,
+      vitrine: linkDaVitrine(p.slug, s.iata),
     },
   };
 }
@@ -336,6 +340,9 @@ function traduzirBloqueios(vitrine: VitrineCativa, saidas: Saidas) {
       companhias: codigo ? [codigo] : [],
       companhiaNome: codigo ? nomeDaCompanhia(codigo) : c[15] || null,
       precoBrl: preco,
+      // As condições de pagamento da Cativa (no orçamento dela): "somente para
+      // Passagens Aéreas: parcelamento em até 6x sem juros" (pacote: 10x).
+      parcelasFonte: PARCELAS_PASSAGEM_CATIVA,
       taxasBrl: taxa,
       bagagem: "nao_informada",
       idaSaida: idaH.saida,
@@ -417,3 +424,5 @@ function voltaCoerente(ida: string | null, volta: string | null): string | null 
   const anoSeguinte = `${Number(volta.slice(0, 4)) + 1}${volta.slice(4)}`;
   return volta < ida && ok(anoSeguinte) ? anoSeguinte : null;
 }
+
+const linkDaVitrine = (slug: string, saida: string) => `${ENDERECO_CATIVA}#pacote=${encodeURIComponent(slug)}&saida=${saida}`;

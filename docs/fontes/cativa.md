@@ -278,8 +278,17 @@ revalidador pode trazê-los quando conferir uma oferta.
   volta, companhia, horários, assentos, preço com a taxa, etiqueta `bloqueio`,
   "emitir até" = o **dia** do prazo (a hora exata vem do portal na
   conferência). Os preços vão para o histórico (`preco_observado`, ida_volta)
-  — o calendário da V2. Parcelas: a tabela da casa (a página não diz se o
-  bloqueio parcela).
+  — o calendário da V2. Parcelas: **6x sem juros**, pela condição de pagamento
+  da própria Cativa ("somente para Passagens Aéreas: até 6x sem juros", no
+  orçamento dela); pacote: 10x.
+- **"Abrir na Cativa"** (pacote): o `link` é o **orçamento** da saída no
+  sistema da Cativa (`premium.infotravel.com.br/orcamento-web`, abre sem
+  login): pacote e datas certos, voos, serviços e valores para 2 pessoas. A
+  Cativa monta **um orçamento por saída, com UM hotel** ("Opção 1"): nas saídas
+  de 2 ou 3 hotéis, o link das outras linhas mostra o pacote e as datas certos
+  com o hotel da opção da Cativa — a pessoa troca o hotel no portal. Conferido
+  em 2 links (Enotel 17–24/11: hotel certo; "Porto de Galinhas com Maragogi"
+  23/02: mostra o Porto 2 Life, a linha era o Enotel).
 - **Fica fora, contado no resumo:** saída com datas inválidas na fonte (volta
   antes da ida; a virada de ano é corrigida), pacote sem aeroporto conhecido
   ou de vários destinos (a Cativa põe a cidade de saída no destino).

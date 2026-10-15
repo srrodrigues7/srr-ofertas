@@ -177,9 +177,10 @@ function Grupo({ g, agora, pendentes, conf }: { g: GrupoVitrine; agora: number; 
         <span className={s.preco}>
           <small>a partir de</small>
           <b>{reaisInteiro(g.aPartirDe)}</b>
+          <small>{porPessoa(g.tipo, melhor?.composicao)}</small>
           {melhor?.preco.parcelas && (
             <small>
-              {melhor.preco.parcelas.n}× {reais(melhor.preco.parcelas.valor)} sem juros
+              {melhor.preco.parcelas.n}× de {reais(melhor.preco.parcelas.valor)} por pessoa, sem juros
             </small>
           )}
           {!g.aPartirDeVenda && g.aPartirDe != null && <small className={s.alerta}>custo (sem venda)</small>}
@@ -321,7 +322,8 @@ function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: 
       <td className={s.voos}>{g.tipo === "pacote" ? <Pacote i={i} /> : <Voo i={i} />}</td>
       <td>
         <div className={s.acoes}>
-          {i.link && (
+          {/* O pacote de fonte com portal tem o "Abrir na …" junto do "Conferir agora". */}
+          {i.link && !abreNaFonte(i, conf) && (
             <a className={s.botaoSecundario} href={i.link} target="_blank" rel="noreferrer" title={`Abrir em ${i.fornecedor ?? i.fonteNome}`}>
               {i.fornecedor ?? i.fonteNome}
             </a>
@@ -348,8 +350,19 @@ function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: 
           </>
         )}
       </td>
-      <td className={s.venda}>{p.venda != null ? reais(p.venda) : <small className={s.alerta}>{p.faltas.join(", ") || "—"}</small>}</td>
-      <td>{p.parcelas ? `${p.parcelas.n}× ${reais(p.parcelas.valor)}${p.parcelas.daFonte ? " (da fonte)" : ""}` : "—"}</td>
+      <td className={s.venda}>
+        {p.venda != null ? (
+          <>
+            {reais(p.venda)}
+            <div>
+              <small className={s.cinza}>{porPessoa(g.tipo, i.composicao)}</small>
+            </div>
+          </>
+        ) : (
+          <small className={s.alerta}>{p.faltas.join(", ") || "—"}</small>
+        )}
+      </td>
+      <td>{p.parcelas ? `${p.parcelas.n}× de ${reais(p.parcelas.valor)} por pessoa${p.parcelas.daFonte ? " (da fonte)" : ""}` : "—"}</td>
       <td>{i.fonteNome}</td>
       <td className={s.cinza}>
         {haQuanto(i.vistaEm, agora)}
@@ -362,7 +375,23 @@ function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: 
               <button className={s.botaoPequeno} type="submit">Conferir agora</button>
             </form>
           ))}
+        {abreNaFonte(i, conf) && (
+          <a className={s.botaoPequeno} href={i.link!} target="_blank" rel="noreferrer" title="O orçamento deste pacote no sistema da operadora">
+            Abrir na {i.fonteNome}
+          </a>
+        )}
       </td>
     </tr>
   );
+}
+
+/** Pacote de fonte com portal (Cativa): o link é o orçamento dele lá. */
+function abreNaFonte(i: ItemVitrine, conf: Conf): boolean {
+  return i.tipo === "pacote" && !!i.link && conf.revalidaveis.has(i.fonteId);
+}
+
+/** Todo preço é guardado por pessoa; a tela diz isso, e do quê. */
+function porPessoa(tipo: string, composicao: string | undefined): string {
+  if (tipo === "pacote") return "por pessoa · quarto duplo";
+  return composicao === "so_ida" ? "por pessoa · só ida" : "por pessoa · ida e volta";
 }

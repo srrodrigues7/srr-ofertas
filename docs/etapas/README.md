@@ -615,8 +615,12 @@ via sessão de controle): nada construído, nenhum aviso dela na tela.
   processo vivo (9676) segurando a trava; a sessão de controle encerrou à
   mão. Para a etapa L: o vigia/instalador precisa garantir que não sobra
   motor órfão.
-- Bloqueio: as parcelas são as da tabela da casa (a página não diz se a
-  Cativa parcela bloqueio) — confirmar com o Saulo.
+- Bloqueio parcela em **6x sem juros** (condição da Cativa para passagem
+  aérea, lida no orçamento dela); pacote em 10x.
+- **"Abrir na Cativa"** abre o orçamento da saída (pacote e datas certos), mas
+  com UM hotel: nas saídas de 2–3 hotéis, as outras linhas abrem o orçamento
+  com o hotel da Cativa (ver a ficha). A tela diz "por pessoa · quarto duplo"
+  / "por pessoa · ida e volta" no preço e nas parcelas.
 - Pacotes com mais de um destino (Cartagena + San Andrés, Peru + Colômbia)
   ficam fora: a Cativa não diz o destino.
 - **Produção:** a migração `cativa` ainda não foi aplicada lá.
