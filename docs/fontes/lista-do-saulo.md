@@ -26,3 +26,13 @@ caminho oficial de integração), Pátria (parceria nova).
   houver outro caminho legítimo (ex.: extensão que captura o que a equipe vê,
   ou e-mails de promoção).
 - **Pátria, Azul Viagens e Expedia TAAP:** investigação aberta na V3a.
+
+## Situação (15/10/2026, fim da V3a)
+
+- **Azul Viagens: depois** (decisão do Saulo). Quando voltar, pela API do Juniper (o sistema por trás do site). A
+  busca é aberta para gente, mas tem o anti-robô da Akamai. Texto do pedido em
+  [azul-viagens.md](azul-viagens.md).
+- **Pátria: depois** (decisão do Saulo). É consolidadora; o caminho é a API
+  Travellink da Wooba. Motivos para retomar em [patria.md](patria.md).
+- **Expedia TAAP: depois** (decisão do Saulo). O caminho é a Rapid API da
+  Expedia Partner Solutions; pedido guardado em [expedia-taap.md](expedia-taap.md).

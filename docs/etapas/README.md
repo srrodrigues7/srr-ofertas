@@ -33,7 +33,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aprovada** (só no computador) |
 | V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **fase 1 aprovada; fase 2 aberta** |
 | V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
-| V3a  | [Investigar Pátria, Azul Viagens e Expedia TAAP](V3a-investigar-patria-azul-expedia.md) — só investigação, uma ficha por fonte | — | alto | **aberta** |
+| V3a  | [Investigar Pátria, Azul Viagens e Expedia TAAP](V3a-investigar-patria-azul-expedia.md) — só investigação, uma ficha por fonte | — | alto | **encerrada — fontes seguradas pelo Saulo** (as três: "depois"; caminho e pedido em cada ficha) |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
@@ -167,6 +167,12 @@ do VoePro (WhatsApp). O Saulo confirmou: **é para buscar isso também.**
 regime (all inclusive, café…), região/país/cidade, praia ou cidade, categoria
 do hotel, se aceita criança, classe — de forma consultável (campos ou
 etiquetas), não só como texto de descrição.
+
+**Promoções que chegam por e-mail e WhatsApp.** Fornecedores mandam ofertas
+para a agência (e-mail, listas de WhatsApp, PDF de tarifário). Ler a caixa de
+e-mail da agência é um caminho legítimo mesmo quando o site do fornecedor tem
+anti-robô. O Saulo (V3a, 15/10) quer deixar para um segundo momento: "acho que
+dá pra tirar coisas boas daqui".
 
 ---
 
@@ -541,3 +547,66 @@ na Hoteldo, só observar o portal e buscar o caminho comercial.
   com o e-mail da operação; usuário e senha no `.env`; e acesso de leitura à
   caixa desse e-mail (provedor + senha de aplicativo), para o robô ler o
   código.
+
+### V3a — Investigar Pátria, Azul Viagens e Expedia TAAP (15/10/2026)
+
+**Decisões do Saulo:** na Pátria interessam **passagens**; na Expedia, **hotel
+e resort fora do Brasil**; na Azul Viagens não precisa de login para buscar.
+No meio da etapa (via sessão de controle): **Pátria fica para depois** (é
+consolidadora, a tarifa é a mesma do Melhores Destinos e a homologação na
+Wooba não compensa agora), **Expedia TAAP também**, e por fim **Azul Viagens
+também** — **a V3a foi encerrada com as três fontes seguradas pelo Saulo**
+(veredito "depois" em todas; o caminho e o texto do pedido ficaram em cada
+ficha, para quando ele quiser retomar). Ler e-mail/WhatsApp de promoções:
+segundo momento (está em "No radar").
+
+**O que se achou** (fichas em `docs/fontes/`):
+
+- **Azul Viagens — depois; quando voltar, pedir a API do Juniper.** O site roda no Juniper. A busca
+  de pacote é aberta para gente e devolve um JSON completo (BSB→Maceió,
+  18–23/02/2027: 55 hotéis, R$ 5.178 a R$ 23.696 para dois, voo Azul com
+  número e horários, estrelas, regime, preço por pessoa e do pacote, taxas,
+  bagagem, cancelamento, valor em pontos TudoAzul). **Mas tem o anti-robô da
+  Akamai:** por programa, a 1ª busca passou e as seguintes ficaram presas 60 s
+  sem resposta. **Não é caminho para robô.** O Juniper tem **API oficial de
+  pacotes** (`PackageAvail` busca; `PackageCheckAvail` confere preço e vaga =
+  revalidador), documentação pública em api-edocs.ejuniper.com; quem pede a
+  integração ao Juniper é a Azul Viagens. **Texto do pedido pronto** na ficha.
+  O menu "Bloqueios" da Azul não tem saída de Brasília hoje.
+- **Pátria — depois.** Consolidadora; portal Travellink com reCAPTCHA; o
+  caminho é a API Travellink da Wooba (homologação + credencial da Pátria).
+  Ficha curta com o que já se sabe e os motivos para retomar.
+- **Expedia TAAP — depois.** Nada sem login, login com CAPTCHA (Arkose),
+  robots.txt proibindo as buscas, e a plataforma desafia programas (429 "Você
+  é ou não um robô?"). Caminho: Rapid API da Expedia Partner Solutions
+  (aprovação caso a caso, expectativa baixa). Pedido guardado na ficha.
+
+**Provas** (Node 24, sem instalar nada, sem banco):
+`node scripts/provas/azul-viagens-aberto.ts`,
+`node scripts/provas/expedia-taap-aberto.ts`,
+`node scripts/provas/patria-wooba.ts` (parte aberta hoje; com a credencial no
+`.env`, busca voos — essa parte foi escrita pela documentação e **não rodou**
+contra a API).
+
+**Para a V3.x da Azul Viagens saber (se o Saulo retomar e a API chegar)**
+
+- Fonte `tipo = 'operadora'`, `aplica_margem = false` (preço público de venda;
+  confirmar na API se vem comissão). Pacote no molde da V1b (`tipo =
+  'pacote'`, hotel, estrelas, regime, noites, adultos/crianças) com o voo do
+  pacote em `ida_voos`/`volta_voos` (a Azul dá número, horário e conexões).
+- Busca por **data exata**, não por mês: cobrir poucas datas por pedido, com
+  teto combinado com a Azul.
+- Parcelas: a busca não traz; ver na API ou deixar como configuração.
+- Na homologação, comparar o mesmo pacote no site (pessoa) e na API.
+- A API do Juniper é XML (SOAP); a `pedirJson` de hoje só faz GET de JSON —
+  o conector precisa de um irmão para XML/POST, no mesmo padrão (prazo,
+  contagem, "bloqueado").
+- Um conector Juniper serve a **qualquer operadora em Juniper** ("Powered by
+  Juniper" no rodapé).
+
+**Ficou de fora / atenção**
+
+- Parte logada da Expedia e da Pátria: não observada (as duas saíram da etapa).
+- Nenhuma das três tem caminho legítimo para robô hoje: **nada novo entra na
+  vitrine** por esta etapa. Os textos dos pedidos estão prontos nas fichas;
+  mandar ou não é decisão do Saulo.
