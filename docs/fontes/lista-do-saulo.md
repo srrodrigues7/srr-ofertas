@@ -37,3 +37,13 @@ caminho oficial de integração), Pátria (parceria nova).
   **Ele pediu para ser lembrado no futuro** — a sessão de controle traz de volta
   quando a vitrine, a nota e a mensagem do grupo (V1b, V2, V4) estiverem
   aprovadas. A V3a fica só com a Azul Viagens.
+
+## Situação (15/10/2026, fim da V3a)
+
+- **Azul Viagens: depois** (decisão do Saulo). Quando voltar, pela API do Juniper (o sistema por trás do site). A
+  busca é aberta para gente, mas tem o anti-robô da Akamai. Texto do pedido em
+  [azul-viagens.md](azul-viagens.md).
+- **Pátria: depois** (decisão do Saulo). É consolidadora; o caminho é a API
+  Travellink da Wooba. Motivos para retomar em [patria.md](patria.md).
+- **Expedia TAAP: depois** (decisão do Saulo). O caminho é a Rapid API da
+  Expedia Partner Solutions; pedido guardado em [expedia-taap.md](expedia-taap.md).
