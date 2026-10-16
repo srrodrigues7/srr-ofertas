@@ -26,3 +26,10 @@ caminho oficial de integração), Pátria (parceria nova).
   houver outro caminho legítimo (ex.: extensão que captura o que a equipe vê,
   ou e-mails de promoção).
 - **Pátria, Azul Viagens e Expedia TAAP:** investigação aberta na V3a.
+- **Pátria: de fora por enquanto** (decisão do Saulo, 15/10/2026). É
+  consolidadora — a tarifa aérea é a mesma que o radar já vê. Caminho oficial
+  existe: API Travellink da **Wooba**, com homologação do sistema
+  (developer.wooba.travel/register) e depois a credencial gerada pela Pátria
+  para "SRR Ofertas". Vale retomar se a SRR quiser o custo líquido exato das
+  passagens em dinheiro, hotel avulso para montar pacote próprio, ou abrir
+  outros fornecedores que usam a Wooba.
