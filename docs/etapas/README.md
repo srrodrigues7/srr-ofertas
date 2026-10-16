@@ -32,10 +32,10 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aprovada** (só no computador) |
 | V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aprovada** (Cativa no ar; o revalidador espera o usuário do robô) |
-| V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
+| V2   | [A nota](V2-a-nota.md) — réguas de preço bom (boa/imperdível), preço normal da rota, preferências de voo, nota 0–100 com o motivo, imperdíveis em destaque | V1b | alto | **aberta** |
 | V3a  | [Investigar Azul Viagens](V3a-investigar-patria-azul-expedia.md) — só investigação (Pátria e Expedia seguradas pelo Saulo) | — | alto | **aberta** |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
-| V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
+| V4   | [Aprovação, card e legenda](V4-card-e-aprovacao.md) — aprovar com conferência, código de rastreio, arte e legenda prontas para postar (em paralelo com a V2) | V1b | alto | **aberta** |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
 | L    | Ligar tudo — Vercel, GitHub, login, motor instalado no computador dedicado, alertas de saúde | quando o Saulo quiser | xalto | esperando |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
@@ -54,8 +54,9 @@ O L é **xalto** porque é onde o sistema sai do computador e fica exposto na
 internet com login — errar ali abre o sistema.
 
 ```
-O0 ─► V1a + V1b ─┬─► V2 ─► V4 ─► V5
-                 └─► V3.x (uma fonte por vez, enquanto o resto anda)
+O0 ─► V1a + V1b ─┬─► V2 ─┐
+                 ├─► V4 ─┴─► V5
+                 └─► V3.x (fontes seguradas pelo Saulo)
                                         L  (quando o Saulo decidir)
 ```
 
