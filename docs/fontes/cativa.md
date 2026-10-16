@@ -257,3 +257,41 @@ aparece na busca (o viajandocomdesconto diz 10x sem juros).
 **Características para o gosto do cliente, no portal:** além do que o
 viajandocomdesconto dá, o portal tem **estrelas** e **tipo de quarto** — o
 revalidador pode trazê-los quando conferir uma oferta.
+
+## Fase 2 — o conector no ar (14/10/2026)
+
+- **Código:** `src/lib/coleta/fontes/cativa.ts` (baixa perguntando "mudou?",
+  tira os blocos de dados; cache em arquivo para o motor religado) e
+  `src/lib/coleta/pacotes.ts` (traduz para o molde da V1a e grava). Uma
+  tarefa, escopo `vitrine`, de `cativa.intervalo_horas` (3) em 3 horas.
+  À mão: `npm run cativa`.
+- **Saídas** (decisão do Saulo): as origens dos pedidos de busca nacionais
+  (BSB) levam tudo; as outras origens dos pedidos (GRU, GIG) só internacional.
+- **Pacote** → aba Pacotes, uma oferta por pacote × saída × hotel: preço =
+  **total por pessoa com a taxa**, em quarto duplo (`adultos = 2`), as parcelas
+  da Cativa (10x), regime normalizado, `crianca_gratis` quando a Cativa
+  informa, agrupado pelo **destino do pacote** (Porto de Galinhas), não pelo
+  aeroporto (REC). Destino → aeroporto: o código no nome, o mapa dos
+  bloqueios, a tabela do próprio site, um dicionário de praias/serras
+  (`AEROPORTO_DO_DESTINO`) e o cadastro de lugares.
+- **Bloqueio** → aba Passagens (`tipo = passagem`, `detalhe = voo`): ida e
+  volta, companhia, horários, assentos, preço com a taxa, etiqueta `bloqueio`,
+  "emitir até" = o **dia** do prazo (a hora exata vem do portal na
+  conferência). Os preços vão para o histórico (`preco_observado`, ida_volta)
+  — o calendário da V2. Parcelas: **6x sem juros**, pela condição de pagamento
+  da própria Cativa ("somente para Passagens Aéreas: até 6x sem juros", no
+  orçamento dela); pacote: 10x.
+- **"Abrir na Cativa"** (pacote): o `link` é o **orçamento** da saída no
+  sistema da Cativa (`premium.infotravel.com.br/orcamento-web`, abre sem
+  login): pacote e datas certos, voos, serviços e valores para 2 pessoas. A
+  Cativa monta **um orçamento por saída, com UM hotel** ("Opção 1"): nas saídas
+  de 2 ou 3 hotéis, o link das outras linhas mostra o pacote e as datas certos
+  com o hotel da opção da Cativa — a pessoa troca o hotel no portal. Conferido
+  em 2 links (Enotel 17–24/11: hotel certo; "Porto de Galinhas com Maragogi"
+  23/02: mostra o Porto 2 Life, a linha era o Enotel).
+- **Fica fora, contado no resumo:** saída com datas inválidas na fonte (volta
+  antes da ida; a virada de ano é corrigida), pacote sem aeroporto conhecido
+  ou de vários destinos (a Cativa põe a cidade de saída no destino).
+- **Resultado (banco de testes, 14/10):** 216 pacotes (211 de BSB, 5
+  internacionais de GRU; 20 all inclusive) e 781 bloqueios (628 de BSB, 153
+  internacionais de GRU) na vitrine; leitura de ~30 s, 1 requisição.

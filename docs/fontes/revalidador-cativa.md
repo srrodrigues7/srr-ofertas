@@ -1,6 +1,7 @@
 # Revalidador automático — Cativa
 
-_Etapa V1b, fase 1 parte B. Desenho para o Saulo decidir; construção na fase 2._
+_Etapa V1b. Desenho na fase 1 parte B; **construído na fase 2** (alternativa
+A, navegador-robô) — ver "O que foi construído" no fim._
 
 **O problema:** a vitrine vem do viajandocomdesconto, que é uma foto. Os
 **bloqueios batem** com o portal ao vivo, mas os **pacotes envelhecem** (o
@@ -99,3 +100,64 @@ os mesmos nos três — trocar o "como" depois não muda nada para a curadoria.
 - **Do Saulo, antes de ligar:** o usuário do robô criado; usuário e senha no
   `.env`; e o acesso de leitura à caixa do e-mail da operação (ele diz qual é
   o provedor — Gmail, Outlook, HostGator… — e cria uma senha de aplicativo).
+
+---
+
+## O que foi construído (fase 2, 14/10/2026)
+
+**Decisões do Saulo:** preço = total por pessoa **com a taxa**; e-mail da
+operação no **Gmail**; até a nota (V2) existir, o robô confere sozinho **as 3
+mais baratas de cada destino** (por aba e origem) e cada oferta da Cativa tem
+o botão **"Conferir agora"**.
+
+**Onde está:**
+
+- `src/lib/revalidador/revalidador.ts` — o organizador: fila
+  (`ofertas.conferencia_pedido`), escolha automática, teto diário, horário,
+  folga, prazo, e o que fazer com o resultado (`registrarConferencia`).
+  Junta numa ida ao portal o que se confere junto: **todos os hotéis do mesmo
+  pacote e data** (uma busca; cada hotel pelo filtro de nome) e **todos os
+  bloqueios de uma rota no mês** (uma consulta na tela de bloqueios). Cada ida
+  vira uma linha em `ofertas.coleta` (tipo `conferencia`) — é o que conta para
+  o teto.
+- `src/lib/revalidador/portal-cativa.ts` — o robô no portal. Usa o **Microsoft
+  Edge que já vem no Windows**, invisível (`playwright-core` 1.63.0, sem
+  baixar navegador). Trava no código: nunca clica em nada que reserve,
+  adicione, emita ou pague. Guarda a sessão em `.dados/` (fora do git).
+- `src/lib/revalidador/codigo-email.ts` — lê o código de verificação no Gmail
+  da operação, **somente leitura** (`imapflow` 2.0.6).
+- `src/lib/revalidador/saude.ts` + tela de Saúde, bloco **Operadoras**.
+- Estado do login em `ofertas.fonte_acesso`: `ok` · `desligado` (falta algo
+  no .env ou `revalidador.ligado = 0`) · `caiu` (tenta de novo só depois de
+  30 min) · `senha_recusada` (só tenta de novo quando a senha do .env mudar —
+  guarda uma impressão digital, nunca a senha).
+- Configuração (`ofertas.configuracao`, editável): `revalidador.ligado`,
+  `.mais_baratas_por_destino` (3), `.reconferir_horas` (6), `.pausa_s` (20),
+  `.teto_dia` (200), `.hora_inicio` (7), `.hora_fim` (23), `.prazo_s` (120),
+  `.codigo_espera_s` (300). O botão funciona a qualquer hora; o automático, só
+  no horário.
+- Uma regra nova no `gravar.ts` da V1a: se a conferência corrigiu o preço e a
+  página da Cativa ainda repete o preço velho, **fica valendo o conferido**
+  (sem isso a coleta desfaria a correção a cada 3 h e o robô voltaria ao portal
+  sem parar).
+
+**Provado:**
+
+- As leituras com o texto **real** do portal (linha de bloqueio, preço do
+  hotel, deadline com hora, código no e-mail): 16 testes ok.
+- O Edge invisível abre o portal e acha usuário, senha e "Entrar" (8 s).
+- **Sem credenciais:** o motor (passada 47) atendeu o "Conferir agora" com
+  "não conferida — falta configurar o login do robô (…)" e a Saúde mostra o
+  que falta. Clicar duas vezes não gerou dois pedidos.
+
+**Ainda NÃO provado (espera o usuário do robô e a senha de app do Gmail):**
+
+- O login completo, em especial a **tela do código** (`auth.xhtml`): não a
+  vimos por dentro (o Saulo digitou o código). O robô procura o primeiro campo
+  de texto e um botão "confirmar/validar/enviar/entrar"; pode precisar de
+  ajuste na primeira vez.
+- A busca de pacote ponta a ponta (escolher "CATIVA COMISSIONADO", origem,
+  destino, datas, a aba do pacote, o filtro do hotel). Cada passo foi feito à
+  mão na parte B, do mesmo jeito; falta rodar com o robô.
+- De quem vem o e-mail do código: o robô procura "cativa", "infotravel" ou
+  "infotera" no remetente/assunto.

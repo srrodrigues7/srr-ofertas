@@ -60,6 +60,47 @@ export async function pedirJson<T>(
   return (await resposta.json()) as T;
 }
 
+/**
+ * Uma página inteira (HTML), perguntando antes "mudou?": com `etag` /
+ * `ultimaMudanca` da leitura anterior, a fonte responde 304 sem o corpo quando
+ * nada mudou (`corpo = null`). Mesmas regras de `pedirJson`.
+ */
+export async function pedirPagina(
+  url: string,
+  opcoes: {
+    fonteId: string;
+    prazoS: number;
+    contador: Contador;
+    etag?: string | null;
+    ultimaMudanca?: string | null;
+    agente: string;
+  },
+): Promise<{ corpo: string | null; etag: string | null; ultimaMudanca: string | null }> {
+  falhaSimulada(opcoes.fonteId);
+  opcoes.contador.requisicoes++;
+  const cabecalhos: Record<string, string> = { "User-Agent": opcoes.agente };
+  if (opcoes.etag) cabecalhos["If-None-Match"] = opcoes.etag;
+  if (opcoes.ultimaMudanca) cabecalhos["If-Modified-Since"] = opcoes.ultimaMudanca;
+  let resposta: Response;
+  try {
+    resposta = await fetch(url, { headers: cabecalhos, signal: AbortSignal.timeout(opcoes.prazoS * 1000) });
+  } catch (e) {
+    const nome = e instanceof Error ? e.name : "";
+    if (nome === "TimeoutError" || nome === "AbortError") throw new Error(`Sem resposta em ${opcoes.prazoS} s: ${encurtar(url)}`);
+    throw new Error(`Não consegui falar com ${encurtar(url)}: ${mensagemDe(e)}`);
+  }
+  if (resposta.status === 403 || resposta.status === 406 || resposta.status === 429) {
+    throw new FonteRecusou(resposta.status, `A fonte recusou o acesso (HTTP ${resposta.status}): ${encurtar(url)}`);
+  }
+  const etag = resposta.headers.get("etag");
+  const ultimaMudanca = resposta.headers.get("last-modified");
+  if (resposta.status === 304) {
+    return { corpo: null, etag: etag ?? opcoes.etag ?? null, ultimaMudanca: ultimaMudanca ?? opcoes.ultimaMudanca ?? null };
+  }
+  if (!resposta.ok) throw new Error(`HTTP ${resposta.status} em ${encurtar(url)}`);
+  return { corpo: await resposta.text(), etag, ultimaMudanca };
+}
+
 /** URL sem a parte de parâmetros longa, para mensagens de erro legíveis. */
 export function encurtar(url: string): string {
   return url.length > 140 ? `${url.slice(0, 140)}…` : url;

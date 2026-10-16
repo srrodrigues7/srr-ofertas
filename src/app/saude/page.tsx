@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { duracao, lerSaude, type Saude } from "@/lib/motor/saude";
 import { mensagemDe } from "@/lib/erros";
+import { lerSaudeDasOperadoras, type SaudeOperadora } from "@/lib/revalidador/saude";
 import Atualizador from "../_componentes/Atualizador";
 import Cabecalho from "../_componentes/Cabecalho";
 import s from "./page.module.css";
@@ -46,9 +47,11 @@ export default async function SaudePage() {
   await connection();
 
   let saude: Saude | null = null;
+  let operadoras: SaudeOperadora[] = [];
   let falha: string | null = null;
   try {
     saude = await lerSaude();
+    operadoras = await lerSaudeDasOperadoras();
   } catch (e) {
     falha = mensagemDe(e);
   }
@@ -68,7 +71,10 @@ export default async function SaudePage() {
           </div>
         </section>
       ) : (
-        <Conteudo saude={saude} />
+        <>
+          <Conteudo saude={saude} />
+          <Operadoras lista={operadoras} />
+        </>
       )}
 
       <footer className={s.rodape}>
@@ -166,5 +172,51 @@ function Conteudo({ saude }: { saude: Saude }) {
         )}
       </section>
     </>
+  );
+}
+
+const ESTADO_ACESSO: Record<string, string> = {
+  ok: "login ok",
+  desligado: "desligado",
+  caiu: "login caiu",
+  senha_recusada: "senha recusada",
+  aguardando_codigo: "esperando o código",
+};
+
+/** V1b — as operadoras: a leitura da vitrine delas e o revalidador (o robô no portal). */
+function Operadoras({ lista }: { lista: SaudeOperadora[] }) {
+  if (!lista.length) return null;
+  const cor = { verde: s.etqOk, amarelo: s.etqAlerta, vermelho: s.etqCrit };
+  return (
+    <section className={s.bloco}>
+      <h3 className={s.blocoTitulo}>Operadoras</h3>
+      <ul className={s.lista}>
+        {lista.map((o) => (
+          <li key={o.fonteId} className={s.linha}>
+            <span className={`${s.etiqueta} ${cor[o.cor]}`}>{o.nome}</span>
+            <span className={s.linhaTexto}>
+              <b>Vitrine:</b>{" "}
+              {o.leitura
+                ? `${o.leitura.status === "ok" ? "" : `${o.leitura.status} — `}${o.leitura.resumo ?? o.leitura.erro ?? ""}`
+                : "ainda não lida (ligue o motor)"}
+              <br />
+              <b>Conferência no portal:</b>{" "}
+              {!o.ligado
+                ? "desligada na configuração (revalidador.ligado = 0)"
+                : o.acesso
+                  ? `${ESTADO_ACESSO[o.acesso.estado] ?? o.acesso.estado}${o.acesso.mensagem ? ` — ${o.acesso.mensagem}` : ""}`
+                  : "sem registro"}
+              <br />
+              <small>
+                {o.consultasHoje} de {o.teto} consultas hoje · {o.naFila} na fila
+                {o.acesso?.ultimaConferenciaEm && ` · última conferência ${fmtDiaHora.format(o.acesso.ultimaConferenciaEm)}`}
+                {o.acesso?.ultimoLoginEm && ` · último login ${fmtDiaHora.format(o.acesso.ultimoLoginEm)}`}
+              </small>
+            </span>
+            <span className={s.linhaHora}>{o.leitura ? `lida ${fmtDiaHora.format(o.leitura.em)}` : ""}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

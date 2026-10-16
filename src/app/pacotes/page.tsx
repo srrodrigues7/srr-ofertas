@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import Vitrine from "../_componentes/Vitrine";
 
-/** Pacotes — aéreo + hotel. Pronta e vazia até a V1b plugar a Cativa e a Hoteldo. */
+/** Pacotes — aéreo + hotel prontos das operadoras (hoje, a Cativa). */
 export default async function PacotesPage({
   searchParams,
 }: {

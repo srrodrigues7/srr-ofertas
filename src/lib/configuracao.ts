@@ -35,6 +35,19 @@ const CATALOGO = {
   "md.datas_por_mes": { min: 1, max: 100 },
   "md.estadia_min": { min: 1, max: 60 },
   "md.estadia_max": { min: 1, max: 90 },
+  // V1b — Cativa e o revalidador automático
+  "cativa.intervalo_horas": { min: 1, max: 48 },
+  "cativa.prazo_s": { min: 10, max: 300 },
+  "cativa.pagina_parada_dias": { min: 1, max: 30 },
+  "revalidador.ligado": { min: 0, max: 1 },
+  "revalidador.mais_baratas_por_destino": { min: 0, max: 20 },
+  "revalidador.reconferir_horas": { min: 1, max: 72 },
+  "revalidador.pausa_s": { min: 5, max: 600 },
+  "revalidador.teto_dia": { min: 1, max: 1000 },
+  "revalidador.hora_inicio": { min: 0, max: 23 },
+  "revalidador.hora_fim": { min: 1, max: 24 },
+  "revalidador.prazo_s": { min: 30, max: 600 },
+  "revalidador.codigo_espera_s": { min: 30, max: 900 },
 } as const;
 
 /** Os limites de cada chave, para a tela de Valores validar antes de gravar. */

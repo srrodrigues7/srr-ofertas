@@ -216,7 +216,10 @@ export async function lerVitrine(f: Filtros): Promise<Vitrine> {
         valores,
       ),
     };
-    const chave = [o.origem, o.destino, o.mes, o.classe, o.tipo].join("|");
+    // Pacote agrupa pelo destino DO PACOTE (Porto de Galinhas, Maragogi), não
+    // pelo aeroporto de chegada (REC, MCZ): são viagens diferentes.
+    const lugar = o.tipo === "pacote" ? (o.destinoCidade ?? o.destino) : o.destino;
+    const chave = [o.origem, lugar, o.mes, o.classe, o.tipo].join("|");
     let g = grupos.get(chave);
     if (!g) {
       g = {

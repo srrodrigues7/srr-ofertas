@@ -414,7 +414,8 @@ model Oferta {
   /// Falso quando a fonte, buscada de novo, não mostrou mais esta oferta.
   ativa           Boolean   @default(true)
 
-  busca Busca? @relation(fields: [buscaId], references: [id], onDelete: SetNull)
+  busca        Busca?              @relation(fields: [buscaId], references: [id], onDelete: SetNull)
+  conferencias ConferenciaPedido[]
 
   @@index([ativa, mes])
   @@index([destino])
@@ -478,5 +479,44 @@ model BuscaAgora {
 
   @@index([status, pedidoEm])
   @@map("busca_agora")
+  @@schema("ofertas")
+}
+
+/// V1b — pedidos de conferência de uma oferta na fonte (revalidador). O botão
+/// "Conferir agora" e o revalidador automático põem aqui; o motor atende.
+model ConferenciaPedido {
+  id         BigInt    @id @default(autoincrement())
+  ofertaId   BigInt    @map("oferta_id")
+  /// botao (alguém clicou) · automatico (as mais baratas de cada destino) · aprovacao (V4)
+  motivo     String
+  pedidoEm   DateTime  @default(now()) @map("pedido_em") @db.Timestamptz(6)
+  /// na_fila · conferindo · feito · erro
+  status     String    @default("na_fila")
+  comecouEm  DateTime? @map("comecou_em") @db.Timestamptz(6)
+  terminouEm DateTime? @map("terminou_em") @db.Timestamptz(6)
+  resumo     String?
+
+  oferta Oferta @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+
+  @@index([status, pedidoEm])
+  @@map("conferencia_pedido")
+  @@schema("ofertas")
+}
+
+/// V1b — o estado do acesso logado a uma fonte (hoje, o portal da Cativa), para
+/// a tela de Saúde dizer se o login está ok, o que falta ou o que caiu.
+model FonteAcesso {
+  fonteId             String    @id @map("fonte_id")
+  /// ok · desligado (falta configuração) · caiu · senha_recusada · aguardando_codigo
+  estado              String
+  mensagem            String?
+  mudouEm             DateTime  @default(now()) @map("mudou_em") @db.Timestamptz(6)
+  ultimoLoginEm       DateTime? @map("ultimo_login_em") @db.Timestamptz(6)
+  ultimaConferenciaEm DateTime? @map("ultima_conferencia_em") @db.Timestamptz(6)
+  /// Impressão digital (hash) do usuário + senha recusados: só tenta de novo
+  /// quando a credencial do .env mudar. Nunca a senha em si.
+  credencialRecusada  String?   @map("credencial_recusada")
+
+  @@map("fonte_acesso")
   @@schema("ofertas")
 }

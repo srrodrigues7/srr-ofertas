@@ -122,6 +122,8 @@ async function principal(): Promise<number> {
   const { lerConfiguracao, CHAVES_DO_MOTOR, CHAVES_DA_COLETA } = await import("@/lib/configuracao");
   const trava = await import("@/lib/motor/trava");
   const coleta = await import("@/lib/coleta/passagens");
+  const pacotes = await import("@/lib/coleta/pacotes");
+  const revalidador = await import("@/lib/revalidador/revalidador");
 
   if (SO_CONFERIR) {
     await prisma.$queryRaw`SELECT 1`;
@@ -242,6 +244,22 @@ async function principal(): Promise<number> {
       // de pé, batendo, e tenta de novo na próxima.
       const { "coleta.max_segundos_por_passada": maxS } = await lerConfiguracao(["coleta.max_segundos_por_passada"]);
       resumo = await coleta.coletarPassagens({ ate: Date.now() + maxS * 1000, log });
+      // V1b: os pacotes (e bloqueios) das operadoras, e depois a conferência
+      // no portal da fonte (revalidador). Cada um com o seu tempo; um que
+      // falha não derruba o outro nem a passada.
+      for (const etapa of [
+        () => pacotes.coletarPacotes({ ate: Date.now() + maxS * 1000, log }),
+        () => revalidador.revalidar({ ate: Date.now() + maxS * 1000, log }),
+      ]) {
+        try {
+          const r = await etapa();
+          if (r) resumo += ` ${r}`;
+        } catch (e) {
+          if (e instanceof ErroDeConfiguracao) throw e;
+          log.aviso(`Parte da passada falhou: ${mensagemDe(e)}`);
+          resumo += ` (falha: ${mensagemDe(e).slice(0, 200)})`;
+        }
+      }
 
       if (Date.now() - ultimaFaxina > FAXINA_MS) {
         ultimaFaxina = Date.now();
@@ -296,7 +314,7 @@ async function principal(): Promise<number> {
       let passoS = 5;
       try {
         passoS = (await lerConfiguracao(["coleta.pedidos_a_cada_s"]))["coleta.pedidos_a_cada_s"];
-        if (souDono && (await coleta.haPedidoNaFila())) break;
+        if (souDono && ((await coleta.haPedidoNaFila()) || (await revalidador.haConferenciaNaFila()))) break;
       } catch {
         // banco instável: a passada seguinte registra o problema
       }

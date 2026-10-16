@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { mensagemDe } from "@/lib/erros";
 import { nomeDaCompanhia } from "@/lib/companhias";
 import { lerVitrine, type Filtros, type GrupoVitrine, type ItemVitrine } from "@/lib/ofertas/vitrine";
-import { buscarAgora } from "../acoes";
+import { buscarAgora, conferirAgora } from "../acoes";
 import Atualizador from "./Atualizador";
 import Cabecalho from "./Cabecalho";
-import { BAGAGEM, CLASSE, data, duracao, haQuanto, horaLocal, milhas, nomeDoMes, reais, reaisInteiro } from "./formato";
+import { BAGAGEM, CLASSE, data, duracao, haQuanto, horaLocal, milhas, nomeDoMes, prazo, reais, reaisInteiro } from "./formato";
 import s from "../tela.module.css";
 
 /**
@@ -46,10 +46,16 @@ export default async function Vitrine({ tipo, sp }: { tipo: Tipo; sp: Busca }) {
   let vitrine: Awaited<ReturnType<typeof lerVitrine>> | null = null;
   let falha: string | null = null;
   let pendentes = new Map<number, string>();
+  let conferindo = new Map<string, string>();
+  let revalidaveis = new Set<string>();
   try {
     vitrine = await lerVitrine(filtros);
     const fila = await prisma.buscaAgora.findMany({ where: { status: { in: ["na_fila", "buscando"] } } });
     pendentes = new Map(fila.map((p) => [p.buscaId, p.status]));
+    // A conferência na fonte (V1b): o que está na fila e quais fontes têm revalidador.
+    const conf = await prisma.conferenciaPedido.findMany({ where: { status: { in: ["na_fila", "conferindo"] } } });
+    conferindo = new Map(conf.map((c) => [c.ofertaId.toString(), c.status]));
+    revalidaveis = new Set((await prisma.fonteAcesso.findMany({ select: { fonteId: true } })).map((a) => a.fonteId));
   } catch (e) {
     falha = mensagemDe(e);
   }
@@ -115,12 +121,12 @@ export default async function Vitrine({ tipo, sp }: { tipo: Tipo; sp: Busca }) {
             <p className={s.vazio}>
               {passagem
                 ? "Nenhuma passagem ainda. Ligue o motor (npm run motor) ou use “Buscar agora” em Pedidos de busca."
-                : "Nenhum pacote ainda — os pacotes chegam com a Cativa e a Hoteldo (etapa V1b)."}
+                : "Nenhum pacote ainda. Ligue o motor (npm run motor) para buscar os pacotes das operadoras."}
             </p>
           ) : (
             <div className={s.grupos}>
               {vitrine.grupos.map((g) => (
-                <Grupo key={g.chave} g={g} agora={agora} pendentes={pendentes} />
+                <Grupo key={g.chave} g={g} agora={agora} pendentes={pendentes} conf={{ conferindo, revalidaveis }} />
               ))}
             </div>
           )}
@@ -146,7 +152,9 @@ function Seletor(p: { nome: string; rotulo: string; valor?: string; opcoes: [str
   );
 }
 
-function Grupo({ g, agora, pendentes }: { g: GrupoVitrine; agora: number; pendentes: Map<number, string> }) {
+type Conf = { conferindo: Map<string, string>; revalidaveis: Set<string> };
+
+function Grupo({ g, agora, pendentes, conf }: { g: GrupoVitrine; agora: number; pendentes: Map<number, string>; conf: Conf }) {
   const melhor = g.itens[0];
   const datas = g.itens.filter((i) => i.detalhe !== "mes").length;
   const buscaId = g.buscaIds[0];
@@ -169,9 +177,10 @@ function Grupo({ g, agora, pendentes }: { g: GrupoVitrine; agora: number; penden
         <span className={s.preco}>
           <small>a partir de</small>
           <b>{reaisInteiro(g.aPartirDe)}</b>
+          <small>{porPessoa(g.tipo, melhor?.composicao)}</small>
           {melhor?.preco.parcelas && (
             <small>
-              {melhor.preco.parcelas.n}× {reais(melhor.preco.parcelas.valor)} sem juros
+              {melhor.preco.parcelas.n}× de {reais(melhor.preco.parcelas.valor)} por pessoa, sem juros
             </small>
           )}
           {!g.aPartirDeVenda && g.aPartirDe != null && <small className={s.alerta}>custo (sem venda)</small>}
@@ -207,7 +216,7 @@ function Grupo({ g, agora, pendentes }: { g: GrupoVitrine; agora: number; penden
         </thead>
         <tbody>
           {g.itens.slice(0, 30).map((i) => (
-            <Linha key={i.id} i={i} g={g} agora={agora} />
+            <Linha key={i.id} i={i} g={g} agora={agora} conf={conf} />
           ))}
         </tbody>
       </table>
@@ -230,8 +239,9 @@ function Trecho(p: { rotulo: string; saida: Date | null; chegada: Date | null; p
   if (!p.saida) return null;
   return (
     <div>
-      {p.rotulo} {horaLocal(p.saida)}→{horaLocal(p.chegada)} ·{" "}
-      {p.paradas === 0 ? "direto" : `${p.paradas} parada${p.paradas! > 1 ? "s" : ""}`} · {duracao(p.dur)}
+      {p.rotulo} {horaLocal(p.saida)}→{horaLocal(p.chegada)}
+      {p.paradas != null && ` · ${p.paradas === 0 ? "direto" : `${p.paradas} parada${p.paradas > 1 ? "s" : ""}`}`}
+      {p.dur != null && ` · ${duracao(p.dur)}`}
       <small> {p.voos}</small>
     </div>
   );
@@ -256,7 +266,7 @@ function Voo({ i }: { i: ItemVitrine }) {
         i.detalhe !== "mes" && <small className={s.cinza}>horários e conexões: nos botões ao lado</small>
       )}
       {i.assentos != null && <div className={i.assentos < 5 ? s.alerta : s.cinza}>{i.assentos} assento{i.assentos === 1 ? "" : "s"} restante{i.assentos === 1 ? "" : "s"}</div>}
-      {i.emitirAte && <div className={s.alerta}>emitir até {data(i.emitirAte)} {horaLocal(i.emitirAte)}</div>}
+      {i.emitirAte && <div className={s.alerta}>emitir até {prazo(i.emitirAte)}</div>}
     </>
   );
 }
@@ -272,7 +282,10 @@ function Pacote({ i }: { i: ItemVitrine }) {
         {i.regime ? (REGIME[i.regime] ?? i.regime) : "regime não informado"} · {i.adultos} adulto{i.adultos > 1 ? "s" : ""}
         {i.criancas ? ` + ${i.criancas} criança${i.criancas > 1 ? "s" : ""}` : ""}
       </div>
-      <small className={s.cinza}>aéreo: {i.companhiaNome ?? (i.companhias.join(", ") || "não informado")}</small>
+      <small className={s.cinza}>
+        aéreo {i.companhiaNome ?? (i.companhias.map((c) => nomeDaCompanhia(c)).join(", ") || "incluso (companhia não informada)")}
+      </small>
+      {i.etiquetas.includes("crianca_gratis") && <div className={s.venda}>criança grátis</div>}
     </>
   );
 }
@@ -291,7 +304,7 @@ function Conferencia({ i, agora }: { i: ItemVitrine; agora: number }) {
   return <div className={s.venda}>✓ conferida {quando}</div>;
 }
 
-function Linha({ i, g, agora }: { i: ItemVitrine; g: GrupoVitrine; agora: number }) {
+function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: number; conf: Conf }) {
   const p = i.preco;
   return (
     <tr>
@@ -309,7 +322,8 @@ function Linha({ i, g, agora }: { i: ItemVitrine; g: GrupoVitrine; agora: number
       <td className={s.voos}>{g.tipo === "pacote" ? <Pacote i={i} /> : <Voo i={i} />}</td>
       <td>
         <div className={s.acoes}>
-          {i.link && (
+          {/* O pacote de fonte com portal tem o "Abrir na …" junto do "Conferir agora". */}
+          {i.link && !abreNaFonte(i, conf) && (
             <a className={s.botaoSecundario} href={i.link} target="_blank" rel="noreferrer" title={`Abrir em ${i.fornecedor ?? i.fonteNome}`}>
               {i.fornecedor ?? i.fonteNome}
             </a>
@@ -330,16 +344,54 @@ function Linha({ i, g, agora }: { i: ItemVitrine; g: GrupoVitrine; agora: number
             {i.precoReferenciaBrl != null && <small className={s.cinza}>em dinheiro na cia: {reais(i.precoReferenciaBrl)}</small>}
           </>
         ) : (
-          reais(p.custo)
+          <>
+            {reais(p.custo)}
+            {i.taxasBrl != null && i.taxasBrl > 0 && <small className={s.cinza}> (com taxa de {reais(i.taxasBrl)})</small>}
+          </>
         )}
       </td>
-      <td className={s.venda}>{p.venda != null ? reais(p.venda) : <small className={s.alerta}>{p.faltas.join(", ") || "—"}</small>}</td>
-      <td>{p.parcelas ? `${p.parcelas.n}× ${reais(p.parcelas.valor)}${p.parcelas.daFonte ? " (da fonte)" : ""}` : "—"}</td>
+      <td className={s.venda}>
+        {p.venda != null ? (
+          <>
+            {reais(p.venda)}
+            <div>
+              <small className={s.cinza}>{porPessoa(g.tipo, i.composicao)}</small>
+            </div>
+          </>
+        ) : (
+          <small className={s.alerta}>{p.faltas.join(", ") || "—"}</small>
+        )}
+      </td>
+      <td>{p.parcelas ? `${p.parcelas.n}× de ${reais(p.parcelas.valor)} por pessoa${p.parcelas.daFonte ? " (da fonte)" : ""}` : "—"}</td>
       <td>{i.fonteNome}</td>
       <td className={s.cinza}>
         {haQuanto(i.vistaEm, agora)}
         <Conferencia i={i} agora={agora} />
+        {conf.revalidaveis.has(i.fonteId) &&
+          (conf.conferindo.has(i.id) ? (
+            <span className={s.etiqueta}>{conf.conferindo.get(i.id) === "conferindo" ? "conferindo…" : "na fila…"}</span>
+          ) : (
+            <form action={conferirAgora.bind(null, i.id)}>
+              <button className={s.botaoPequeno} type="submit">Conferir agora</button>
+            </form>
+          ))}
+        {abreNaFonte(i, conf) && (
+          <a className={s.botaoPequeno} href={i.link!} target="_blank" rel="noreferrer" title="O orçamento deste pacote no sistema da operadora">
+            Abrir na {i.fonteNome}
+          </a>
+        )}
       </td>
     </tr>
   );
+}
+
+/** Pacote de fonte com portal (Cativa): o link é o orçamento dele lá. */
+function abreNaFonte(i: ItemVitrine, conf: Conf): boolean {
+  return i.tipo === "pacote" && !!i.link && conf.revalidaveis.has(i.fonteId);
+}
+
+/** Todo preço é guardado por pessoa; a tela diz isso, e do quê. */
+function porPessoa(tipo: string, composicao: string | undefined): string {
+  if (tipo === "pacote") return "por pessoa · quarto duplo";
+  return composicao === "so_ida" ? "por pessoa · só ida" : "por pessoa · ida e volta";
 }
