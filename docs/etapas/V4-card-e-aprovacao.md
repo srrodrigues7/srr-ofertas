@@ -61,6 +61,30 @@ funciona). **Não mexa nas telas da V2** (vitrine, réguas, preferências): os
 botões Aprovar/Descartar entram na vitrine por um componente pequeno que você
 cria e combina com a V2; o resto são telas novas.
 
+### O contrato já decidido pela V2 (16/10/2026)
+
+Colunas novas em `ofertas.oferta` (a V2 cria; detalhes na seção "V2 — A nota:
+o contrato com a V4" do `README.md`, quando a V2 for juntada — até lá, no ramo
+`claude/mystifying-panini-397794`):
+
+| coluna | o que é | uso na V4 |
+|---|---|---|
+| `nota` | 0–100 | ordenar a tela de aprovação |
+| `selo` | `comum` · `boa` · `imperdivel` | o destaque na arte e na legenda |
+| `nota_motivo` | uma linha, visão da equipe | **só na tela da equipe — nunca na arte nem na legenda** |
+| `nota_em` | quando foi calculada | — |
+| `temporada` | null ou "Carnaval", "Réveillon"… | pode virar destaque na arte ("Carnaval 2027") |
+| `nota_detalhe` | json | — |
+| `candidata` | top N do dia (`grupo.limite_dia`) | o que a curadoria vê primeiro |
+
+`null` = ainda não calculada: a arte sai sem selo. **Leia de forma tolerante**
+— a V2 pode migrar depois de você começar — e combine com ela a ordem das
+migrações se as duas criarem colunas em `oferta`.
+
+Decisão do Saulo na V2: a régua é **automática** (boa = 20% abaixo do normal,
+imperdível = 35%), com exceções manuais dele; picos como Carnaval são
+**temporada** própria.
+
 ## Perguntas de negócio que esta etapa leva ao Saulo
 
 Só o que muda o que vai ser construído, na caixa de seleção. Prováveis: a foto
