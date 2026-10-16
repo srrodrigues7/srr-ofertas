@@ -33,7 +33,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aprovada** (só no computador) |
 | V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **fase 1 aprovada; fase 2 aberta** |
 | V2   | A nota — preço normal de cada rota em cada mês, nota 0–100 com o motivo, as melhores no topo | V1 | alto | esperando |
-| V3a  | [Investigar Pátria, Azul Viagens e Expedia TAAP](V3a-investigar-patria-azul-expedia.md) — só investigação, uma ficha por fonte | — | alto | **aberta** |
+| V3a  | [Investigar Azul Viagens](V3a-investigar-patria-azul-expedia.md) — só investigação (Pátria e Expedia seguradas pelo Saulo) | — | alto | **aberta** |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | Da oferta ao post — aprovar/descartar com revalidação, card e legenda | V2 | alto | esperando |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |

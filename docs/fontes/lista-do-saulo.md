@@ -33,3 +33,7 @@ caminho oficial de integração), Pátria (parceria nova).
   para "SRR Ofertas". Vale retomar se a SRR quiser o custo líquido exato das
   passagens em dinheiro, hotel avulso para montar pacote próprio, ou abrir
   outros fornecedores que usam a Wooba.
+- **Expedia TAAP: segurada por enquanto** (decisão do Saulo, 15/10/2026).
+  **Ele pediu para ser lembrado no futuro** — a sessão de controle traz de volta
+  quando a vitrine, a nota e a mensagem do grupo (V1b, V2, V4) estiverem
+  aprovadas. A V3a fica só com a Azul Viagens.
