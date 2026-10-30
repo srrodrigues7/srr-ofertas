@@ -37,7 +37,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | [Aprovação, card e legenda](V4-card-e-aprovacao.md) — aprovar com conferência, código de rastreio, arte e legenda prontas para postar (em paralelo com a V2) | V1b | alto | **aberta** |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
-| V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aberta** |
+| V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **entregue** (só no computador; esperando a revisão) |
 | L    | Ligar tudo — Vercel, GitHub, login, motor instalado no computador dedicado, alertas de saúde | quando o Saulo quiser | xalto | esperando |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
 
@@ -707,3 +707,140 @@ contra a API).
 - Nenhuma das três tem caminho legítimo para robô hoje: **nada novo entra na
   vitrine** por esta etapa. Os textos dos pedidos estão prontos nas fichas;
   mandar ou não é decisão do Saulo.
+
+### V6 — Alertas do WhatsApp (entregue só no computador, 30/10/2026)
+
+**Decisões do Saulo nesta etapa**
+
+- **O radar lê o arquivo do monitor; o monitor não é tocado** (nenhum arquivo
+  dele foi editado, nada foi instalado nele, ele não foi reiniciado).
+- Só **Smiles, Azul e LATAM**; o **Azul Pelo Mundo tem milheiro próprio**
+  (programa separado). Origem: BSB sempre; GRU/GIG só internacional.
+- **Uma oferta por mês de ida, com todas as datas** (ida do mês + todas as
+  voltas depois) — o cliente escolhe a combinação.
+- **O preço é o nosso** (milheiro + margem). Sem a taxa em reais, o preço sai
+  "R$ X **+ taxas**" e a equipe confere a taxa antes de postar. O valor em
+  reais que o grupo anuncia é **só referência da equipe**. (O Saulo chegou a
+  sugerir usar o valor do grupo; com a regra do TSM na mesa, escolheu "o nosso
+  + taxas a conferir".)
+- Conferência: Smiles econômica pelo **robô** (calendário aberto da Smiles);
+  Azul, LATAM e Smiles executiva pelo **"Conferi"** da equipe.
+
+**O que existe** (ficha em [`docs/fontes/alerta-cpm.md`](../fontes/alerta-cpm.md))
+
+- **Banco** (3 migrações, **só no banco de testes**, escritas à mão — ver
+  abaixo): `alerta_mensagem` (cada mensagem do grupo, com resultado e motivo),
+  `alerta_ponte` (o último contato com o monitor), `alerta_origem`,
+  `alerta_programa` (nome no alerta → programa nosso; vazio = fora),
+  `fonte.taxas_a_conferir`, fonte `alerta_cpm`, programa `azul_pelo_mundo`
+  (milheiro vazio), 7 chaves `alertas.*`, ~60 aeroportos do Brasil e país e
+  região de ~45 destinos estrangeiros dos alertas.
+- **Código** em `src/lib/alertas/`: `ponte.ts` (lê o arquivo do monitor,
+  `MONITOR_WHATSAPP_PASTA` no `.env`), `leitor.ts` (texto → dados, puro, sem
+  IA), `regras.ts` (o que vira oferta), `alertas.ts` (a passada: ponte, leitor,
+  validade, conferência), `conferencia.ts` (robô no calendário da Smiles e o
+  "Conferi" à mão), `saude.ts`. O motor chama `processarAlertas` como a
+  primeira etapa depois da coleta de passagens. `npm run alertas` roda sem o
+  motor (`--vigiar` = só a ponte, para computadores separados;
+  `--ler-de-novo`; `--conferir`) e imprime o relatório.
+- **Painel:** na vitrine, a oferta de alerta mostra as datas ("2 datas de ida:
+  13, 20/11 · voltas: …"), "+ taxas", "o grupo CPM vende a R$ X (referência)",
+  "Conferir agora" (Smiles econômica) e **"Conferi"** (quem, milhas, taxa;
+  "Esgotou"). Valores: bloco **Alertas do WhatsApp** (origens e programas; ao
+  salvar, os alertas recentes são relidos na hora). Saúde: bloco **Alertas do
+  WhatsApp** (hoje: recebidos, viraram oferta, fora de origem, fora de
+  programa, não entendidos; avisos de ponte parada, monitor sem sinal,
+  WhatsApp desconectado e silêncio no horário do grupo).
+
+**Provado no banco (e na tela)**
+
+- Os **416 alertas** guardados (07 a 29/10): **0 não entendidos**; 178 fora
+  de origem, 121 fora de programa, 3 fora de classe, 3 sem datas futuras, 111
+  passariam (9 dentro das 24 h viraram 26 ofertas; 102 já vencidos).
+- **Ponta a ponta com o motor**: numa cópia do arquivo do monitor (pasta
+  temporária) entrou um alerta "novo" (BSB→Cancún, Smiles); na primeira
+  passada a ponte o trouxe, viraram 5 ofertas (uma por mês) e o robô conferiu
+  as 5 no calendário da Smiles (4 ok, 1 com o preço Clube atualizado). Motor
+  desligado e conferido: nenhum `node` sobrou.
+- Robô nas 25 ofertas Smiles econômica: 4 ok, 9 com preço mudado, 1 esgotada,
+  5 sem selo por falta da taxa, 6 com o calendário vazio naquela hora.
+- "Conferi" pela tela (GRU→Toronto, Azul Pelo Mundo): resultado ok,
+  "conferido à mão por …", taxa gravada; relida depois de mudar uma regra em
+  Valores, a conferência e a taxa continuaram.
+- Origem VCP adicionada e tirada em Valores: a regra valeu na hora.
+- `npm run check` passa.
+
+**Para quem juntar com a V2 (a sessão de controle pediu)**
+
+- **Migrações escritas à mão**: o banco de testes já tem as colunas e tabelas
+  da V2 (`nota`, `selo`, `nota_calculo`, `regua_excecao`…), e um `migrate
+  diff` contra ele mandaria apagá-las. As da V6 são
+  `20261030030754_alertas_whatsapp`, `20261030031726_alertas_seguranca` e
+  `20261030033020_alertas_lugares`; **não as reescreva** ao juntar. As da V2
+  (`20261016…`) têm data anterior e ainda não estão nesta pasta: ao juntar, as
+  duas convivem (tabelas e colunas diferentes).
+- Arquivos que as duas mexem (quem juntar primeiro fica como base):
+  - `src/lib/coleta/molde.ts` — etiqueta `alerta` em `ETIQUETAS`; campo
+    opcional `variante` em `OfertaNova`, que entra no fim da `chaveDaOferta`.
+  - `src/lib/ofertas/vitrine.ts` — `ItemVitrine.alerta` (datas e referência,
+    lidos de `dados_fonte.alerta`) e a função `dadosDoAlerta` no fim.
+  - `src/app/_componentes/Vitrine.tsx` — import de `./Alerta`; contagem de
+    datas do grupo; "+ taxas" no cabeçalho, no custo, na venda e nas parcelas;
+    as datas do alerta na 1ª coluna; os botões de conferência do alerta.
+  - `src/lib/configuracao.ts` — 7 chaves `alertas.*` no catálogo e
+    `CHAVES_DOS_ALERTAS` no fim.
+  - `src/motor/motor.ts` — import de `alertas` e a etapa
+    `alertas.processarAlertas` como a 1ª do laço (antes dos pacotes); a V2
+    põe a nota no mesmo laço: **a nota deve vir depois dos alertas**.
+  - `src/lib/revalidador/revalidador.ts` — o revalidador da Cativa só pega
+    pedidos de ofertas da Cativa (antes pegava qualquer um da fila).
+  - `scripts/provas/*-aberto.ts` — o mesmo `export {};` que a V2 pôs
+    (idêntico, junta sem conflito).
+- Tocados só aqui: `prisma/schema.prisma` (modelos `Alerta*`,
+  `Fonte.taxasAConferir`, `Programa.alertaNomes`), `src/lib/ofertas/preco.ts`
+  (`Preco.maisTaxas`), `src/lib/coleta/gravar.ts` (`podeSerAprovada`),
+  `src/app/acoes.ts`, `src/app/saude/page.tsx`, `src/app/valores/page.tsx`.
+
+**Para a V2 (a nota) saber**
+
+- Oferta de alerta: `fonte_id = 'alerta_cpm'`, etiqueta **`alerta`** (o
+  empurrão na nota é da V2), `detalhe = 'mes'` com `ida`/`volta` **vazias** —
+  as datas estão em `dados_fonte.alerta.datasIda`/`datasVolta`.
+- `vista_em` = a hora em que o **grupo postou** (a validade conta dali).
+- Os alertas **não** gravam `preco_observado` (amostra viciada em preço baixo).
+
+**Para a V4 (aprovação e card) saber**
+
+- **`podeSerAprovada` mudou de assinatura**: pede também `milhas` e
+  `taxasBrl`; oferta em milhas **sem taxa** nunca é aprovada. A taxa entra
+  pelo "Conferi" (`conferirAMao` em `src/lib/alertas/conferencia.ts`; o botão
+  está em `src/app/_componentes/Alerta.tsx`, para a V4 pôr onde quiser).
+- Pedido de conferência da aprovação (`motivo = 'aprovacao'` em
+  `conferencia_pedido`) de oferta de alerta é atendido pela V6: Smiles
+  econômica pelo calendário; as outras recebem "não deu — confira à mão".
+- Card, "mês e janela": `dados_fonte.alerta.datasIda` (todas as datas do mês)
+  e, depois da conferência do robô, `milhasPorDiaIda`/`milhasPorDiaVolta`
+  (milhas Clube de cada data) para o "N datas a este preço".
+- **Nada de `dados_fonte.alerta` vai para a arte nem para a legenda**:
+  `cpmBrl` (preço do grupo), `idaTexto`/`voltaTexto` (texto deles) e
+  `taxaOutraMoeda` são só da equipe. A companhia (`companhia_nome`) pode ir.
+
+**Ficou de fora / atenção**
+
+- **O monitor de WhatsApp do Saulo está parado** desde 29/10 às 21:07 (o
+  processo não existe). Não foi religado (decisão do Saulo). Sem ele, nada
+  novo chega; a Saúde avisa.
+- **Falta o Saulo preencher** em Valores o milheiro de **Azul Pelo Mundo,
+  Azul Fidelidade e LATAM Pass**; até lá, essas ofertas aparecem com "falta
+  preço do milheiro".
+- A prova "alerta novo aparece sozinho" foi feita com uma **cópia** do
+  arquivo do monitor; a prova com o grupo de verdade precisa do monitor
+  ligado num dia útil.
+- Em computadores separados (etapa L), a ponte roda com `npm run alertas --
+  --vigiar` no computador do monitor; não há instalador para isso ainda.
+- O monitor guardou uma mensagem **sem o id do WhatsApp** (29/10): a ponte dá
+  um id próprio; se o monitor algum dia guardar a mesma com o id, ela vira
+  "repetida" (as ofertas não duplicam, a chave é a mesma).
+- O calendário da Smiles confere a data e o preço "a partir de" em qualquer
+  companhia, não o voo exato do alerta.
+- **Produção:** as migrações da V6 não foram aplicadas lá.

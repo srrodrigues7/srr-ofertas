@@ -8,6 +8,9 @@ import {
   salvarMargem,
   salvarParcela,
   salvarPrograma,
+  salvarAlertaOrigem,
+  salvarAlertaPrograma,
+  tirarAlertaOrigem,
 } from "../acoes";
 import Cabecalho from "../_componentes/Cabecalho";
 import s from "../tela.module.css";
@@ -26,13 +29,15 @@ const fmt = (v: { toString(): string } | null | undefined) => (v == null ? "" : 
 
 export default async function ValoresPage() {
   await connection();
-  const [programas, margens, parcelas, faixas, fontes, config] = await Promise.all([
+  const [programas, margens, parcelas, faixas, fontes, config, alertaOrigens, alertaProgramas] = await Promise.all([
     prisma.programa.findMany({ orderBy: { nome: "asc" } }),
     prisma.margem.findMany(),
     prisma.parcelaTaxa.findMany({ orderBy: { parcelas: "asc" } }),
     prisma.faixaBusca.findMany({ orderBy: { deMes: "asc" } }),
     prisma.fonte.findMany({ orderBy: { nome: "asc" } }),
     prisma.configuracao.findMany({ orderBy: { chave: "asc" } }),
+    prisma.alertaOrigem.findMany({ orderBy: { codigo: "asc" } }),
+    prisma.alertaPrograma.findMany({ orderBy: [{ vezes: "desc" }, { exemplo: "asc" }] }),
   ]);
   const margem = new Map(margens.map((m) => [m.tipo, m]));
   const horizonte = faixas.length ? Math.max(...faixas.map((f) => f.ateMes)) + 1 : 0;
@@ -152,6 +157,59 @@ export default async function ValoresPage() {
               <button className={s.botaoSecundario} type="submit">{f.ligada ? "Desligar" : "Ligar"}</button>
             </form>
           </div>
+        ))}
+      </section>
+
+      <section className={s.bloco}>
+        <h2>Alertas do WhatsApp</h2>
+        <p className={s.explica}>
+          Os alertas do grupo &quot;Alerta Passagens CPM&quot; viram oferta só se saem de uma destas origens e usam um
+          programa ligado a um programa nosso. O preço é sempre o nosso (milheiro + margem). Mudou aqui, os alertas
+          recentes são lidos de novo na hora.
+        </p>
+        <h3>Origens</h3>
+        {alertaOrigens.map((o) => (
+          <div key={o.codigo} className={s.linhaForm}>
+            <b style={{ width: 150 }}>{o.codigo}</b>
+            <span className={s.explica} style={{ flex: 1 }}>
+              {o.soInternacional ? "só quando o destino é internacional" : "qualquer destino"}
+            </span>
+            <form action={tirarAlertaOrigem.bind(null, o.codigo)}>
+              <button className={s.botaoSecundario} type="submit">Tirar</button>
+            </form>
+          </div>
+        ))}
+        <form action={salvarAlertaOrigem} className={s.linhaForm}>
+          <label className={s.campo}>
+            <span>origem (código)</span>
+            <input className={s.entrada} name="codigo" maxLength={3} placeholder="VCP" />
+          </label>
+          <label className={s.campo}>
+            <span>só internacional</span>
+            <input type="checkbox" name="soInternacional" defaultChecked />
+          </label>
+          <button className={s.botaoPequeno} type="submit">Adicionar</button>
+        </form>
+        <h3>Programas (como aparecem nos alertas)</h3>
+        {alertaProgramas.map((p) => (
+          <form key={p.nome} action={salvarAlertaPrograma.bind(null, p.nome)} className={`${s.linhaForm} ${p.programaId ? "" : s.desligada}`}>
+            <b style={{ width: 230 }}>{p.exemplo}</b>
+            <label className={s.campo}>
+              <span>vira oferta como</span>
+              <select className={s.entrada} name="programa" defaultValue={p.programaId ?? ""}>
+                <option value="">— fora da vitrine —</option>
+                {programas.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className={s.explica} style={{ flex: 1 }}>
+              {p.vezes ? `apareceu em ${p.vezes} alerta${p.vezes === 1 ? "" : "s"}` : "ainda não apareceu"}
+            </span>
+            <button className={s.botaoPequeno} type="submit">Salvar</button>
+          </form>
         ))}
       </section>
 

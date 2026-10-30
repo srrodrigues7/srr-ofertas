@@ -296,8 +296,17 @@ export async function registrarConferencia(
   });
 }
 
-/** Só oferta conferida (ok ou com o preço já atualizado) pode ser aprovada. */
-export function podeSerAprovada(o: { conferidaEm: Date | null; conferenciaResultado: string | null; ativa: boolean }) {
+/** Só oferta conferida (ok ou com o preço já atualizado) pode ser aprovada.
+ *  V6: oferta em milhas sem a taxa (alerta do WhatsApp com "+ taxas") também
+ *  não — a taxa conferida entra pelo "Conferi" (`conferirAMao`). */
+export function podeSerAprovada(o: {
+  conferidaEm: Date | null;
+  conferenciaResultado: string | null;
+  ativa: boolean;
+  milhas: number | null;
+  taxasBrl: { toNumber(): number } | number | null;
+}) {
+  if (o.milhas != null && o.taxasBrl == null) return false;
   return o.ativa && o.conferidaEm != null && (o.conferenciaResultado === "ok" || o.conferenciaResultado === "mudou");
 }
 

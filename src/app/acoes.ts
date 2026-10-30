@@ -139,3 +139,52 @@ export async function salvarConfiguracao(f: FormData) {
   await prisma.configuracao.update({ where: { chave }, data: { valor } });
   refresh();
 }
+
+// --- V6: alertas do WhatsApp ---------------------------------------------------
+
+/** "Conferi" — a equipe conferiu a oferta de alerta no site do programa (Azul,
+ *  LATAM, Smiles executiva, ou a taxa que o alerta não deu). Fica o nome e a hora. */
+export async function conferirAlerta(ofertaId: string, f: FormData) {
+  if (!/^\d{1,19}$/.test(ofertaId)) throw new Error("Oferta inválida.");
+  const { conferirAMao } = await import("@/lib/alertas/conferencia");
+  const milhas = numero(f, "milhas");
+  await conferirAMao(BigInt(ofertaId), {
+    quem: texto(f, "quem"),
+    esgotou: texto(f, "acao") === "esgotou",
+    milhas: milhas != null ? Math.round(milhas) : null,
+    taxasBrl: numero(f, "taxas"),
+  });
+  refresh();
+}
+
+/** Valores: o nome de programa que aparece nos alertas → um programa do radar
+ *  (ou nenhum = fora da vitrine). Os alertas são lidos de novo com a regra nova. */
+export async function salvarAlertaPrograma(nome: string, f: FormData) {
+  const programaId = texto(f, "programa") || null;
+  if (programaId && !(await prisma.programa.findUnique({ where: { id: programaId } }))) {
+    throw new Error("Programa desconhecido.");
+  }
+  await prisma.alertaPrograma.update({ where: { nome }, data: { programaId } });
+  await lerAlertasDeNovo();
+}
+
+/** Valores: de onde um alerta pode ir para a vitrine. */
+export async function salvarAlertaOrigem(f: FormData) {
+  const c = codigo(texto(f, "codigo"));
+  if (!c) throw new Error("Origem: código de 3 letras.");
+  const soInternacional = texto(f, "soInternacional") === "on";
+  await prisma.alertaOrigem.upsert({ where: { codigo: c }, create: { codigo: c, soInternacional }, update: { soInternacional } });
+  await lerAlertasDeNovo();
+}
+
+export async function tirarAlertaOrigem(codigoOrigem: string) {
+  await prisma.alertaOrigem.delete({ where: { codigo: codigoOrigem } });
+  await lerAlertasDeNovo();
+}
+
+/** A regra nova vale na hora: os alertas recentes são lidos de novo. */
+async function lerAlertasDeNovo() {
+  const { relerRecentes } = await import("@/lib/alertas/alertas");
+  await relerRecentes();
+  refresh();
+}

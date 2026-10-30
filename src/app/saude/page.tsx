@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { duracao, lerSaude, type Saude } from "@/lib/motor/saude";
 import { mensagemDe } from "@/lib/erros";
 import { lerSaudeDasOperadoras, type SaudeOperadora } from "@/lib/revalidador/saude";
+import { lerSaudeDosAlertas, type SaudeDosAlertas } from "@/lib/alertas/saude";
 import Atualizador from "../_componentes/Atualizador";
 import Cabecalho from "../_componentes/Cabecalho";
 import s from "./page.module.css";
@@ -48,10 +49,13 @@ export default async function SaudePage() {
 
   let saude: Saude | null = null;
   let operadoras: SaudeOperadora[] = [];
+  let alertas: SaudeDosAlertas | string | null = null;
   let falha: string | null = null;
   try {
     saude = await lerSaude();
     operadoras = await lerSaudeDasOperadoras();
+    // Os alertas não derrubam a tela: um problema neles aparece no bloco deles.
+    alertas = await lerSaudeDosAlertas().catch((e) => mensagemDe(e));
   } catch (e) {
     falha = mensagemDe(e);
   }
@@ -74,6 +78,7 @@ export default async function SaudePage() {
         <>
           <Conteudo saude={saude} />
           <Operadoras lista={operadoras} />
+          {alertas && <Alertas a={alertas} />}
         </>
       )}
 
@@ -216,6 +221,59 @@ function Operadoras({ lista }: { lista: SaudeOperadora[] }) {
             <span className={s.linhaHora}>{o.leitura ? `lida ${fmtDiaHora.format(o.leitura.em)}` : ""}</span>
           </li>
         ))}
+      </ul>
+    </section>
+  );
+}
+
+/** V6 — os alertas do grupo de passagens do WhatsApp: o que chegou hoje, o que
+ *  virou oferta, e se o monitor e a ponte estão mandando. */
+function Alertas({ a }: { a: SaudeDosAlertas | string }) {
+  const cor = { verde: s.etqOk, amarelo: s.etqAlerta, vermelho: s.etqCrit };
+  if (typeof a === "string") {
+    return (
+      <section className={s.bloco}>
+        <h3 className={s.blocoTitulo}>Alertas do WhatsApp</h3>
+        <p className={s.motivo}>Não consegui ler: {a}</p>
+      </section>
+    );
+  }
+  const n = (k: string) => a.hoje[k] ?? 0;
+  return (
+    <section className={s.bloco}>
+      <h3 className={s.blocoTitulo}>Alertas do WhatsApp</h3>
+      <ul className={s.lista}>
+        <li className={s.linha}>
+          <span className={`${s.etiqueta} ${cor[a.cor]}`}>Alerta CPM</span>
+          <span className={s.linhaTexto}>
+            <b>Hoje:</b> {a.recebidosHoje} alerta{a.recebidosHoje === 1 ? "" : "s"} recebido{a.recebidosHoje === 1 ? "" : "s"}
+            {" · "}
+            {n("oferta")} viraram oferta · {n("fora_origem")} fora de origem · {n("fora_programa")} fora de programa
+            {n("fora_classe") ? ` · ${n("fora_classe")} fora de classe` : ""}
+            {n("sem_datas") ? ` · ${n("sem_datas")} sem datas` : ""}
+            {" · "}
+            {n("nao_entendido")} não entendido{n("nao_entendido") === 1 ? "" : "s"}
+            {n("falta_ler") ? ` · ${n("falta_ler")} esperando leitura` : ""}
+            {a.repetidosHoje ? ` (${a.repetidosHoje} repetido${a.repetidosHoje === 1 ? "" : "s"})` : ""}
+            <br />
+            <b>Na vitrine:</b> {a.naVitrine} oferta{a.naVitrine === 1 ? "" : "s"} de alerta
+            {a.semConferencia ? `, ${a.semConferencia} esperando conferência` : ""}
+            {a.avisos.map((x) => (
+              <span key={x}>
+                <br />
+                <b className={s.motivo}>⚠ {x}</b>
+              </span>
+            ))}
+            <br />
+            <small>
+              {a.ponte?.lidaEm ? `ponte leu ${fmtDiaHora.format(a.ponte.lidaEm)}${a.ponte.maquina ? ` (${a.ponte.maquina})` : ""}` : "ponte nunca leu"}
+              {a.monitor?.em && ` · monitor deu sinal ${fmtDiaHora.format(a.monitor.em)}`}
+              {a.monitor?.whatsapp && ` · WhatsApp ${a.monitor.whatsapp === "CONNECTED" ? "conectado" : a.monitor.whatsapp}`}
+              {a.monitor?.grupo && ` · grupo ${a.monitor.grupo}`}
+            </small>
+          </span>
+          <span className={s.linhaHora}>{a.ultimoAlertaEm ? `último alerta ${fmtDiaHora.format(a.ultimoAlertaEm)}` : ""}</span>
+        </li>
       </ul>
     </section>
   );

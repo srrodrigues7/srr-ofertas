@@ -67,7 +67,7 @@ export async function revalidar(opcoes: { ate: number; log: Log }): Promise<stri
 
   if (dentroDoHorario(cfg)) await enfileirarAutomaticas(cfg);
   const pedidos = await prisma.conferenciaPedido.findMany({
-    where: { status: "na_fila", ...(dentroDoHorario(cfg) ? {} : { motivo: "botao" }) },
+    where: { status: "na_fila", oferta: { fonteId: CATIVA }, ...(dentroDoHorario(cfg) ? {} : { motivo: "botao" }) },
     orderBy: [{ pedidoEm: "asc" }],
     select: { id: true, ofertaId: true, motivo: true },
   });
@@ -145,7 +145,7 @@ export async function revalidar(opcoes: { ate: number; log: Log }): Promise<stri
   } finally {
     await portal.fechar();
   }
-  const restam = await prisma.conferenciaPedido.count({ where: { status: "na_fila" } });
+  const restam = await prisma.conferenciaPedido.count({ where: { status: "na_fila", oferta: { fonteId: CATIVA } } });
   return `Revalidador: ${feitas} consulta(s) no portal, ${conferidas} oferta(s) conferida(s)${restam ? `, ${restam} na fila` : ""}.`;
 }
 
@@ -184,11 +184,11 @@ async function quedaDoLogin(e: unknown, pedidos: Pedido[]) {
 }
 
 async function recusarPedidosDoBotao(motivo: string): Promise<number> {
-  const pedidos = await prisma.conferenciaPedido.findMany({ where: { status: "na_fila", motivo: "botao" } });
+  const pedidos = await prisma.conferenciaPedido.findMany({ where: { status: "na_fila", motivo: "botao", oferta: { fonteId: CATIVA } } });
   for (const p of pedidos) await registrarConferencia(p.ofertaId, { resultado: "nao_deu", motivo });
   await fecharPedidos(pedidos, "erro", motivo);
   // Os automáticos não fazem sentido parados na fila: saem.
-  await prisma.conferenciaPedido.deleteMany({ where: { status: "na_fila", motivo: "automatico" } });
+  await prisma.conferenciaPedido.deleteMany({ where: { status: "na_fila", motivo: "automatico", oferta: { fonteId: CATIVA } } });
   return pedidos.length;
 }
 

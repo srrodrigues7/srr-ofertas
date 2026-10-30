@@ -22,7 +22,7 @@ export type Valores = {
   programas: Map<string, { nome: string; precoMilheiro: number | null; usaClube: boolean }>;
   margens: Map<string, { percentual: number; minimo: number }>;
   parcelas: Map<number, number>;
-  fontes: Map<string, { nome: string; aplicaMargem: boolean }>;
+  fontes: Map<string, { nome: string; aplicaMargem: boolean; taxasAConferir: boolean }>;
   parcelasDestaque: number;
 };
 
@@ -49,6 +49,9 @@ export type Preco = {
   parcelas: { n: number; valor: number; total: number; daFonte: boolean } | null;
   /** O que impede de calcular, em português, para a tela. */
   faltas: string[];
+  /** V6: a fonte não deu a taxa e a equipe confere — custo, venda e parcelas
+   *  saem SEM a taxa, e a tela mostra "+ taxas". */
+  maisTaxas: boolean;
 };
 
 export async function lerValores(): Promise<Valores> {
@@ -65,7 +68,7 @@ export async function lerValores(): Promise<Valores> {
     ),
     margens: new Map(margens.map((m) => [m.tipo, { percentual: m.percentual.toNumber(), minimo: m.minimoBrl.toNumber() }])),
     parcelas: new Map(parcelas.map((p) => [p.parcelas, p.taxa.toNumber()])),
-    fontes: new Map(fontes.map((f) => [f.id, { nome: f.nome, aplicaMargem: f.aplicaMargem }])),
+    fontes: new Map(fontes.map((f) => [f.id, { nome: f.nome, aplicaMargem: f.aplicaMargem, taxasAConferir: f.taxasAConferir }])),
     parcelasDestaque: cfg["parcelas.destaque"],
   };
 }
@@ -83,6 +86,9 @@ export function precificar(o: OfertaParaPreco, v: Valores): Preco {
   const faltas: string[] = [];
   let custo: number | null = null;
   let milhasDoCusto: number | null = null;
+  // Fonte que nem sempre dá a taxa (alertas do WhatsApp, V6): sem ela, o preço
+  // sai sem a taxa e a tela diz "+ taxas" (decisão do Saulo, 30/10/2026).
+  const maisTaxas = o.milhas != null && o.taxasBrl == null && (v.fontes.get(o.fonteId)?.taxasAConferir ?? false);
 
   if (o.milhas != null) {
     const prog = o.programaId ? v.programas.get(o.programaId) : undefined;
@@ -92,9 +98,10 @@ export function precificar(o: OfertaParaPreco, v: Valores): Preco {
       milhasDoCusto = prog.usaClube ? o.milhas : o.milhasNormal;
       if (milhasDoCusto == null) faltas.push(`preço sem Clube ${prog.nome} (a Smiles só mostra o preço Clube no calendário)`);
       if (prog.precoMilheiro == null) faltas.push(`preço do milheiro ${prog.nome}`);
-      if (o.taxasBrl == null) faltas.push("taxas");
-      if (milhasDoCusto != null && prog.precoMilheiro != null && o.taxasBrl != null) {
-        custo = centavos((milhasDoCusto / 1000) * prog.precoMilheiro + o.taxasBrl);
+      if (o.taxasBrl == null && !maisTaxas) faltas.push("taxas");
+      const taxas = o.taxasBrl ?? (maisTaxas ? 0 : null);
+      if (milhasDoCusto != null && prog.precoMilheiro != null && taxas != null) {
+        custo = centavos((milhasDoCusto / 1000) * prog.precoMilheiro + taxas);
       }
     }
   } else if (o.precoBrl != null) {
@@ -139,5 +146,5 @@ export function precificar(o: OfertaParaPreco, v: Valores): Preco {
     }
   }
 
-  return { custo, milhasDoCusto, tipoMargem, margem, venda, parcelas, faltas };
+  return { custo, milhasDoCusto, tipoMargem, margem, venda, parcelas, faltas, maisTaxas };
 }

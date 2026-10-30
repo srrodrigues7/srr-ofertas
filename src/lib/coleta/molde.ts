@@ -95,6 +95,10 @@ export type OfertaNova = {
   fornecedor?: string | null;
   link?: string | null;
   dadosFonte?: unknown;
+  /** O que distingue ofertas da mesma fonte, rota, classe e datas (V6: os
+   *  alertas trazem vários programas e companhias para a mesma rota e mês).
+   *  Entra na chave. */
+  variante?: string | null;
 };
 
 /** Um preço para o histórico (`ofertas.preco_observado`). */
@@ -133,6 +137,7 @@ export function chaveDaOferta(o: OfertaNova): string {
   const quando = o.detalhe === "mes" ? `${o.mes}|mes` : `${o.ida ?? "-"}|${o.volta ?? "-"}`;
   const partes = [o.fonteId, o.tipo, o.origem, o.destino, o.classe, quando];
   if (o.tipo === "pacote") partes.push(o.hotelNome ?? "-", o.regime ?? "-", String(o.adultos ?? 1), String(o.criancas ?? 0));
+  if (o.variante) partes.push(o.variante);
   return partes.join("|");
 }
 
@@ -150,6 +155,8 @@ export const ETIQUETAS = {
   executiva: "executiva",
   milhas: "milhas",
   internacional: "internacional",
+  /** V6: veio de um alerta do grupo de WhatsApp (a V2 dá o empurrão na nota). */
+  alerta: "alerta",
 } as const;
 
 /** As etiquetas que se deduzem dos próprios campos da oferta. */
