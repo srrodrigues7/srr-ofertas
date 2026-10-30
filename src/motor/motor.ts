@@ -119,16 +119,18 @@ async function principal(): Promise<number> {
 
   // Só depois de conferir o .env: o módulo do banco recusa subir sem ele.
   const { prisma } = await import("@/lib/prisma");
-  const { lerConfiguracao, CHAVES_DO_MOTOR, CHAVES_DA_COLETA } = await import("@/lib/configuracao");
+  const { lerConfiguracao, CHAVES_DO_MOTOR, CHAVES_DA_COLETA, CHAVES_DOS_ALERTAS } = await import("@/lib/configuracao");
   const trava = await import("@/lib/motor/trava");
   const coleta = await import("@/lib/coleta/passagens");
   const pacotes = await import("@/lib/coleta/pacotes");
   const revalidador = await import("@/lib/revalidador/revalidador");
+  const alertas = await import("@/lib/alertas/alertas");
 
   if (SO_CONFERIR) {
     await prisma.$queryRaw`SELECT 1`;
     await lerConfiguracao(CHAVES_DO_MOTOR);
     await lerConfiguracao([...CHAVES_DA_COLETA, "coleta.max_segundos_por_passada", "coleta.pedidos_a_cada_s"]);
+    await lerConfiguracao(CHAVES_DOS_ALERTAS);
     log.info("Conferência ok: .env, banco e configuração estão completos.");
     await prisma.$disconnect();
     return 0;
@@ -244,10 +246,12 @@ async function principal(): Promise<number> {
       // de pé, batendo, e tenta de novo na próxima.
       const { "coleta.max_segundos_por_passada": maxS } = await lerConfiguracao(["coleta.max_segundos_por_passada"]);
       resumo = await coleta.coletarPassagens({ ate: Date.now() + maxS * 1000, log });
-      // V1b: os pacotes (e bloqueios) das operadoras, e depois a conferência
-      // no portal da fonte (revalidador). Cada um com o seu tempo; um que
-      // falha não derruba o outro nem a passada.
+      // V6: os alertas do WhatsApp (ponte, leitor e conferência). V1b: os
+      // pacotes (e bloqueios) das operadoras, e depois a conferência no portal
+      // da fonte (revalidador). Cada um com o seu tempo; um que falha não
+      // derruba o outro nem a passada.
       for (const etapa of [
+        () => alertas.processarAlertas({ ate: Date.now() + maxS * 1000, log }),
         () => pacotes.coletarPacotes({ ate: Date.now() + maxS * 1000, log }),
         () => revalidador.revalidar({ ate: Date.now() + maxS * 1000, log }),
       ]) {

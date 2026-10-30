@@ -23,7 +23,8 @@
     "saude": "tsx scripts/ver-saude.ts",
     "cativa": "tsx scripts/coletar-cativa.ts",
     "pacote:instalador": "node scripts/montar-pacote.mjs",
-    "coletas": "tsx scripts/ver-coletas.ts"
+    "coletas": "tsx scripts/ver-coletas.ts",
+    "alertas": "tsx scripts/alertas.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

@@ -122,21 +122,24 @@ model Configuracao {
 /// Um lugar de onde se busca preço: Smiles, Melhores Destinos, uma operadora.
 model Fonte {
   /// "smiles", "melhores_destinos", "cativa"…
-  id           String   @id
-  nome         String
+  id             String   @id
+  nome           String
   /// milhas · mercado (preço público de site de venda) · operadora · consolidadora
-  tipo         String
+  tipo           String
   /// O degrau da escada de acesso (1 API oficial · 2 endpoint · 3 página · 4 navegador).
-  degrau       Int
+  degrau         Int
   /// Desligada, o motor não vai a ela (nem pelo "Buscar agora").
-  ligada       Boolean  @default(true)
+  ligada         Boolean  @default(true)
   /// Soma margem? Milhas e preço de mercado, sim; operadora e consolidadora já
   /// trazem a RAV embutida (decisão do Saulo): o preço delas é o de venda.
-  aplicaMargem Boolean  @map("aplica_margem")
+  aplicaMargem   Boolean  @map("aplica_margem")
   /// Para fonte de milhas: o programa cujo milheiro converte milhas em reais.
-  programaId   String?  @map("programa_id")
-  observacao   String?
-  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  programaId     String?  @map("programa_id")
+  /// V6: a fonte nem sempre diz a taxa (alertas do WhatsApp). Sem taxa, o preço
+  /// sai como "R$ X + taxas" e a equipe confere a taxa antes de aprovar.
+  taxasAConferir Boolean  @default(false) @map("taxas_a_conferir")
+  observacao     String?
+  atualizadoEm   DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   programa Programa? @relation(fields: [programaId], references: [id])
 
@@ -156,7 +159,8 @@ model Programa {
   usaClube      Boolean  @default(true) @map("usa_clube")
   atualizadoEm  DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  fontes Fonte[]
+  fontes      Fonte[]
+  alertaNomes AlertaPrograma[]
 
   @@map("programa")
   @@schema("ofertas")
@@ -518,5 +522,97 @@ model FonteAcesso {
   credencialRecusada  String?   @map("credencial_recusada")
 
   @@map("fonte_acesso")
+  @@schema("ofertas")
+}
+
+// ============================================================================
+// V6 — os alertas do grupo "Alerta Passagens CPM" (WhatsApp).
+//
+// O monitor de WhatsApp do Saulo guarda as mensagens num arquivo; a ponte
+// (src/lib/alertas/ponte.ts) copia para `alerta_mensagem`, sem tocar no
+// monitor. O leitor entende cada alerta e grava ofertas no molde, com a fonte
+// `alerta_cpm` e a etiqueta `alerta`. O preço é sempre o da SRR (milheiro +
+// margem): o valor em reais que o grupo anuncia fica só como referência.
+// ============================================================================
+
+/// Cada mensagem do grupo de passagens, como o monitor guardou. O autor
+/// (telefone) não vem: o radar não precisa dele.
+model AlertaMensagem {
+  /// O id da mensagem no WhatsApp.
+  id         String    @id
+  grupo      String
+  texto      String
+  temMidia   Boolean   @default(false) @map("tem_midia")
+  /// Quando o grupo postou.
+  enviadaEm  DateTime  @map("enviada_em") @db.Timestamptz(6)
+  /// Impressão digital do texto: mudou (mensagem editada) = ler de novo.
+  revisao    String
+  /// Impressão do texto sem espaços: o mesmo alerta postado de novo tem a mesma.
+  assinatura String
+  recebidaEm DateTime  @default(now()) @map("recebida_em") @db.Timestamptz(6)
+  /// Quando o leitor leu esta revisão. Vazio = falta ler.
+  lidaEm     DateTime? @map("lida_em") @db.Timestamptz(6)
+  /// oferta · vencido · fora_origem · fora_programa · fora_classe · sem_datas · nao_entendido
+  resultado  String?
+  motivo     String?
+  /// Um alerta com o mesmo texto já tinha chegado antes.
+  repetida   Boolean   @default(false)
+  /// Quantas ofertas este alerta gravou (ou renovou).
+  ofertas    Int       @default(0)
+  /// O que o leitor entendeu (rota, programa, milhas, taxas, datas).
+  entendido  Json?
+
+  @@index([enviadaEm])
+  @@index([lidaEm])
+  @@index([assinatura])
+  @@map("alerta_mensagem")
+  @@schema("ofertas")
+}
+
+/// O último contato da ponte com o monitor (uma linha só). É o que a Saúde lê
+/// para dizer se o monitor está mandando.
+model AlertaPonte {
+  id        String    @id @default("ponte")
+  maquina   String?
+  /// Última vez que a ponte leu o arquivo do monitor.
+  lidaEm    DateTime? @map("lida_em") @db.Timestamptz(6)
+  /// Quantas mensagens o arquivo tinha, e quantas chegaram de novo nesta leitura.
+  noArquivo Int       @default(0) @map("no_arquivo")
+  novas     Int       @default(0)
+  /// Quando o monitor atualizou o próprio estado, e o resumo dele (WhatsApp
+  /// conectado? o grupo de passagens está sendo lido?).
+  monitorEm DateTime? @map("monitor_em") @db.Timestamptz(6)
+  monitor   Json?
+  erro      String?
+
+  @@map("alerta_ponte")
+  @@schema("ofertas")
+}
+
+/// De onde um alerta pode ir para a vitrine (decisão do Saulo, 29/10/2026):
+/// BSB sempre; GRU e GIG só quando o destino é internacional.
+model AlertaOrigem {
+  codigo          String  @id
+  soInternacional Boolean @map("so_internacional")
+
+  @@map("alerta_origem")
+  @@schema("ofertas")
+}
+
+/// Como cada programa aparece escrito nos alertas → o programa do radar.
+/// Sem programa = fora da vitrine (hoje só Smiles, Azul e LATAM entram). Um
+/// nome novo entra aqui sozinho, sem programa, e o Saulo decide em Valores.
+model AlertaPrograma {
+  /// Minúsculo e sem acento ("azul pelo mundo").
+  nome       String   @id
+  /// Como apareceu no alerta, para a tela.
+  exemplo    String
+  programaId String?  @map("programa_id")
+  vezes      Int      @default(0)
+  vistoEm    DateTime @default(now()) @map("visto_em") @db.Timestamptz(6)
+
+  programa Programa? @relation(fields: [programaId], references: [id])
+
+  @@map("alerta_programa")
   @@schema("ofertas")
 }

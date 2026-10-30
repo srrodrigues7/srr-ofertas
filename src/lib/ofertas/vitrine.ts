@@ -2,6 +2,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { lerConfiguracao } from "@/lib/configuracao";
 import { lerValores, precificar, type Preco } from "./preco";
+import type { DadosDoAlerta } from "@/lib/alertas/regras";
 
 /**
  * A vitrine da equipe: as ofertas ativas, com custo, venda e parcelas,
@@ -75,6 +76,9 @@ export type ItemVitrine = {
   vistaEm: Date;
   detalhadaEm: Date | null;
   preco: Preco;
+  /** V6: oferta de alerta do WhatsApp — as datas (o cliente escolhe), o preço
+   *  do grupo como referência (só a equipe vê) e o que a conferência achou. */
+  alerta: (DadosDoAlerta & { valorConferido: number | null }) | null;
 };
 
 export type GrupoVitrine = {
@@ -200,6 +204,7 @@ export async function lerVitrine(f: Filtros): Promise<Vitrine> {
       link: o.link,
       vistaEm: o.vistaEm,
       detalhadaEm: o.detalhadaEm,
+      alerta: dadosDoAlerta(o.dadosFonte, num(o.conferenciaValor)),
       preco: precificar(
         {
           fonteId: o.fonteId,
@@ -303,4 +308,11 @@ export async function lerVitrine(f: Filtros): Promise<Vitrine> {
     },
     faltasGerais: [...faltasGerais],
   };
+}
+
+/** As datas e a referência de um alerta do WhatsApp (V6), quando a oferta é um. */
+function dadosDoAlerta(dados: Prisma.JsonValue, valorConferido: number | null): ItemVitrine["alerta"] {
+  const a = (dados as { alerta?: DadosDoAlerta } | null)?.alerta;
+  if (!a || !Array.isArray(a.datasIda)) return null;
+  return { ...a, valorConferido };
 }

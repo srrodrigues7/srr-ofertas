@@ -48,6 +48,14 @@ const CATALOGO = {
   "revalidador.hora_fim": { min: 1, max: 24 },
   "revalidador.prazo_s": { min: 30, max: 600 },
   "revalidador.codigo_espera_s": { min: 30, max: 900 },
+  // V6 — alertas do grupo de passagens do WhatsApp
+  "alertas.validade_horas": { min: 1, max: 168 },
+  "alertas.silencio_horas": { min: 1, max: 48 },
+  "alertas.silencio_hora_inicio": { min: 0, max: 23 },
+  "alertas.silencio_hora_fim": { min: 1, max: 24 },
+  "alertas.silencio_dias_uteis": { min: 0, max: 1 },
+  "alertas.ponte_parada_min": { min: 1, max: 1440 },
+  "alertas.conferir_smiles_horas": { min: 0, max: 168 },
 } as const;
 
 /** Os limites de cada chave, para a tela de Valores validar antes de gravar. */
@@ -133,4 +141,15 @@ export const CHAVES_DA_VITRINE = [
 export const CHAVES_DA_SAUDE = [
   "saude.amarelo_apos_s",
   "saude.vermelho_apos_s",
+] as const satisfies readonly ChaveConfiguracao[];
+
+/** O que os alertas do WhatsApp (V6) precisam. */
+export const CHAVES_DOS_ALERTAS = [
+  "alertas.validade_horas",
+  "alertas.silencio_horas",
+  "alertas.silencio_hora_inicio",
+  "alertas.silencio_hora_fim",
+  "alertas.silencio_dias_uteis",
+  "alertas.ponte_parada_min",
+  "alertas.conferir_smiles_horas",
 ] as const satisfies readonly ChaveConfiguracao[];

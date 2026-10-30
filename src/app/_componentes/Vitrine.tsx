@@ -6,6 +6,7 @@ import { lerVitrine, type Filtros, type GrupoVitrine, type ItemVitrine } from "@
 import { buscarAgora, conferirAgora } from "../acoes";
 import Atualizador from "./Atualizador";
 import Cabecalho from "./Cabecalho";
+import { ConferenciaDoAlerta, DatasDoAlerta, ReferenciaDoAlerta } from "./Alerta";
 import { BAGAGEM, CLASSE, data, duracao, haQuanto, horaLocal, milhas, nomeDoMes, prazo, reais, reaisInteiro } from "./formato";
 import s from "../tela.module.css";
 
@@ -156,7 +157,8 @@ type Conf = { conferindo: Map<string, string>; revalidaveis: Set<string> };
 
 function Grupo({ g, agora, pendentes, conf }: { g: GrupoVitrine; agora: number; pendentes: Map<number, string>; conf: Conf }) {
   const melhor = g.itens[0];
-  const datas = g.itens.filter((i) => i.detalhe !== "mes").length;
+  // Oferta de alerta (V6) é uma por mês, com várias datas dentro.
+  const datas = g.itens.reduce((n, i) => n + (i.alerta ? i.alerta.datasIda.length : i.detalhe !== "mes" ? 1 : 0), 0);
   const buscaId = g.buscaIds[0];
   const pendente = buscaId ? pendentes.get(buscaId) : undefined;
   const pacote = g.tipo === "pacote";
@@ -185,6 +187,7 @@ function Grupo({ g, agora, pendentes, conf }: { g: GrupoVitrine; agora: number; 
           )}
           {!g.aPartirDeVenda && g.aPartirDe != null && <small className={s.alerta}>custo (sem venda)</small>}
           {melhor?.taxasEstimadas && <small className={s.alerta}>com taxa estimada</small>}
+          {melhor?.preco.maisTaxas && <small className={s.alerta}>+ taxas (a conferir)</small>}
         </span>
         <span className={s.datas}>{datas ? `${datas} data${datas > 1 ? "s" : ""}` : "só o mês"}</span>
         <span className={s.fontes}>{g.fontes.join(" · ")}</span>
@@ -309,7 +312,9 @@ function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: 
   return (
     <tr>
       <td>
-        {i.detalhe === "mes" ? (
+        {i.alerta ? (
+          <DatasDoAlerta a={i.alerta} />
+        ) : i.detalhe === "mes" ? (
           <span className={s.cinza}>menor do mês</span>
         ) : (
           <>
@@ -340,6 +345,8 @@ function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: 
           <>
             {milhas(p.milhasDoCusto ?? i.milhas)} + {reais(i.taxasBrl)}
             {i.taxasEstimadas && <small className={s.alerta}> (taxa ESTIMADA — confirmar na emissão)</small>}
+            {p.maisTaxas && <small className={s.alerta}> (taxa a conferir)</small>}
+            {i.alerta && <ReferenciaDoAlerta a={i.alerta} />}
             <div>{p.custo != null ? reais(p.custo) : <small className={s.alerta}>falta {p.faltas.join(", ")}</small>}</div>
             {i.precoReferenciaBrl != null && <small className={s.cinza}>em dinheiro na cia: {reais(i.precoReferenciaBrl)}</small>}
           </>
@@ -354,6 +361,7 @@ function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: 
         {p.venda != null ? (
           <>
             {reais(p.venda)}
+            {p.maisTaxas && " + taxas"}
             <div>
               <small className={s.cinza}>{porPessoa(g.tipo, i.composicao)}</small>
             </div>
@@ -362,11 +370,15 @@ function Linha({ i, g, agora, conf }: { i: ItemVitrine; g: GrupoVitrine; agora: 
           <small className={s.alerta}>{p.faltas.join(", ") || "—"}</small>
         )}
       </td>
-      <td>{p.parcelas ? `${p.parcelas.n}× de ${reais(p.parcelas.valor)} por pessoa${p.parcelas.daFonte ? " (da fonte)" : ""}` : "—"}</td>
+      <td>
+        {p.parcelas ? `${p.parcelas.n}× de ${reais(p.parcelas.valor)} por pessoa${p.parcelas.daFonte ? " (da fonte)" : ""}` : "—"}
+        {p.parcelas && p.maisTaxas && " + taxas"}
+      </td>
       <td>{i.fonteNome}</td>
       <td className={s.cinza}>
         {haQuanto(i.vistaEm, agora)}
         <Conferencia i={i} agora={agora} />
+        {i.alerta && <ConferenciaDoAlerta i={i} naFila={conf.conferindo.get(i.id)} />}
         {conf.revalidaveis.has(i.fonteId) &&
           (conf.conferindo.has(i.id) ? (
             <span className={s.etiqueta}>{conf.conferindo.get(i.id) === "conferindo" ? "conferindo…" : "na fila…"}</span>
