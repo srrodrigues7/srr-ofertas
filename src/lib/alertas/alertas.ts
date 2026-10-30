@@ -52,17 +52,18 @@ export async function processarAlertas(opcoes: { ate: number; log: Log }): Promi
 
 /** O que o leitor precisa saber do banco (lido uma vez por lote). */
 async function contexto(): Promise<Omit<Contexto, "mensagemId" | "enviadaEm" | "vencido">> {
-  const [origens, programas, nomes, brasil] = await Promise.all([
+  const [origens, programas, nomes, lugares] = await Promise.all([
     prisma.alertaOrigem.findMany(),
     prisma.alertaPrograma.findMany({ select: { nome: true, programaId: true } }),
     prisma.programa.findMany({ select: { id: true, nome: true } }),
-    prisma.lugar.findMany({ where: { pais: "Brasil" }, select: { codigo: true } }),
+    prisma.lugar.findMany({ select: { codigo: true, pais: true } }),
   ]);
   return {
     origens: new Map(origens.map((o) => [o.codigo, o.soInternacional])),
     programas: new Map(programas.map((p) => [p.nome, p.programaId])),
     nomesDosProgramas: new Map(nomes.map((p) => [p.id, p.nome])),
-    brasil: new Set(brasil.map((l) => l.codigo)),
+    brasil: new Set(lugares.filter((l) => l.pais === "Brasil").map((l) => l.codigo)),
+    exterior: new Set(lugares.filter((l) => l.pais !== "Brasil").map((l) => l.codigo)),
     hoje: hoje(),
   };
 }

@@ -40,6 +40,10 @@ export type Contexto = {
   nomesDosProgramas: Map<string, string>;
   /** Aeroportos do Brasil (para saber o que é nacional). */
   brasil: Set<string>;
+  /** Aeroportos cadastrados fora do Brasil (`lugar` com outro país, ou sem país:
+   *  os aprendidos do mural do MD, todos estrangeiros). Fora das duas listas =
+   *  desconhecido: nunca conta como internacional. */
+  exterior: Set<string>;
   hoje: string;
   mensagemId: string;
   enviadaEm: Date;
@@ -80,10 +84,17 @@ export function decidir(a: AlertaLido, c: Contexto): Decisao {
   const programasNovos = a.programas.filter((p) => !c.programas.has(normalizar(p)));
   const fora = (resultado: Resultado, motivo: string): Decisao => ({ resultado, motivo, ofertas: [], programasNovos });
 
-  const internacional = !c.brasil.has(a.destino) || !c.brasil.has(a.origem);
+  // Internacional só com o aeroporto CADASTRADO fora do Brasil; desconhecido não conta.
+  const internacional = c.exterior.has(a.destino) || c.exterior.has(a.origem);
   const soInternacional = c.origens.get(a.origem);
   if (soInternacional === undefined) return fora("fora_origem", `sai de ${a.origem}`);
-  if (soInternacional && !internacional) return fora("fora_origem", `${a.origem}→${a.destino} é nacional (de ${a.origem}, só internacional)`);
+  if (soInternacional) {
+    // De GRU/GIG só passa o que se sabe que é internacional: aeroporto fora do
+    // cadastro não vira "internacional" por omissão.
+    const desconhecido = [a.origem, a.destino].find((x) => !c.brasil.has(x) && !c.exterior.has(x));
+    if (desconhecido) return fora("fora_origem", `aeroporto ${desconhecido} desconhecido no cadastro`);
+    if (!internacional) return fora("fora_origem", `${a.origem}→${a.destino} é nacional (de ${a.origem}, só internacional)`);
+  }
 
   const aceitos = a.programas
     .map((nome) => ({ nome, id: c.programas.get(normalizar(nome)) ?? null }))
