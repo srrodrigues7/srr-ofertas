@@ -103,3 +103,10 @@ Card, legenda, aprovação e publicação (V4); Telegram (V5); gosto do cliente
 - Um voo de volta às 4h45 perde para um de horário bom, com o motivo dizendo
   isso.
 - As imperdíveis se destacam na vitrine.
+
+## Acréscimo (29/10/2026): alertas do WhatsApp
+
+A V6 traz os alertas do grupo "Alerta Passagens CPM" como ofertas da fonte
+`alerta_cpm`, com a etiqueta `alerta`. Decisão do Saulo: **mesma nota** das
+outras, com **"veio de alerta"** no motivo e um **bônus configurável** na nota
+ou na ordem. Alerta com preço comum continua com selo comum.
