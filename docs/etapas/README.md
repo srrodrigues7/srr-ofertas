@@ -929,7 +929,7 @@ ganhou as três `NEXT_PUBLIC_*` (documentadas no `.env.example`).
 - O teste do **login de verdade** (Auth de produção + captcha) só se faz no
   endereço publicado: o captcha só aceita os endereços cadastrados no widget
   da Cloudflare (`ofertas.srrviagens.com.br`; `localhost` e o `.vercel.app`
-  não estão). Ver a linha "publicação" abaixo.
+  não estão). Ver "Publicação — onde parou" abaixo.
 - **Radar dentro do VoePro:** `basePath '/ofertas'` aqui + rewrite no
   `next.config` do VoePro; acesso vindo do cadastro do VoePro (`crm.usuario`);
   `ofertas.acesso` e `/entrar` se aposentam.
@@ -944,3 +944,29 @@ ganhou as três `NEXT_PUBLIC_*` (documentadas no `.env.example`).
   agora" e "Conferir agora" pela internet só são atendidos com ele ligado.
 - Backup: o automático do MilesPro está quebrado desde 08/10 (R17); antes
   desta publicação o Saulo baixou um completo (~00:10 de 31/10).
+
+**Publicação — onde parou (31/10/2026, madrugada; o Saulo encerrou o dia)**
+
+O caminho foi o do VoePro (GitHub + importação na Vercel), conduzido pelo
+Guardião da fusão, em vez da CLI prevista na especificação.
+
+| item | estado |
+|---|---|
+| Repositório | `srrodrigues7/srr-ofertas` (privado); `main` = `44611d2` (o ramo `l0/painel-no-ar` empurrado como `main`) |
+| Projeto Vercel | `srr-ofertas`; deploy de Production `dpl_EZ6DHfX6wMXTAVW8Hhoyz9r1Gz7B` **READY** |
+| Banco | produção: as 9 migrações do Radar aplicadas no build; `ofertas` com 24 tabelas; `ofertas.acesso` com 1 (Saulo) |
+| Endereço hoje | só `srr-ofertas.vercel.app`, atrás da Vercel Authentication (login da Vercel antes do nosso) |
+| Proteção conferida no publicado | `/valores` sem sessão → `/entrar` com formulário e captcha |
+| Domínio `ofertas.srrviagens.com.br` | **falta**: CNAME `18385c081092182e.vercel-dns-016.com` no Registro.br (Guardião) e o domínio no projeto (Saulo) |
+| Redirect URL `https://ofertas.srrviagens.com.br/**` no Auth | **falta** (Saulo) |
+| Hostname no widget do Turnstile | **falta** (Saulo) |
+| Funções em São Paulo (`gru1`) | commit `31daddd` no ramo, aprovado pelo Guardião; **falta** o push para o `main` do GitHub |
+| Teste de login com a senha do Saulo | **falta** (depende dos três itens acima) |
+| Motor apontando para a produção | **falta**: a linha `DATABASE_URL` do `.env` dele vira a de produção, e o motor reinicia |
+
+Até o motor trocar de banco, a vitrine publicada fica vazia: as ofertas de
+hoje estão no banco de testes, onde o motor ainda colhe.
+
+**Atenção para quem juntar ao `main` local:** o `main` do GitHub já tem a L0
+(`44611d2`); o `main` local deste computador ainda está em `84373ea`. Juntar
+`l0/painel-no-ar` ao `main` local deixa os dois iguais (avanço simples).
