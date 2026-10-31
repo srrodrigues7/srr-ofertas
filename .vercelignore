@@ -1,0 +1,20 @@
+# O que NUNCA sobe para a Vercel quando se publica pela linha de comando
+# (vercel deploy manda a pasta inteira; isto vale além do .gitignore).
+
+# Segredos e dados locais.
+.env
+.env.*
+!.env.example
+.dados/
+logs/
+*.log
+
+# As cópias de trabalho de outras sessões (cada uma com o seu .env).
+.claude/
+
+# Gerados ou pesados: a Vercel instala e constrói do zero.
+node_modules/
+.next/
+src/generated/
+pacote/
+instalador/
