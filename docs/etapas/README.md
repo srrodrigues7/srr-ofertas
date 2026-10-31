@@ -38,8 +38,8 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V4   | [Aprovação, card e legenda](V4-card-e-aprovacao.md) — aprovar com conferência, código de rastreio, arte e legenda prontas para postar (em paralelo com a V2) | V1b | alto | **aberta** |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
 | V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main; prova com o grupo de verdade pendente: monitor parado) |
-| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel com senha única da equipe, no banco de testes; motor segue no computador do Saulo | V6 | médio | **aberta** (30/10, para apresentar à equipe hoje) |
-| L    | Ligar tudo — o resto: banco de produção, domínio, GitHub, login por pessoa, motor no computador dedicado, alertas de saúde | L0 | xalto | esperando |
+| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída** (31/10, ramo `l0/painel-no-ar`; publicação conduzida pelo Guardião da fusão) |
+| L    | Ligar tudo — o resto: o Radar dentro do VoePro (`/ofertas`, acesso pelo cadastro do VoePro), GitHub, motor no computador dedicado, alertas de saúde | L0 | xalto | esperando |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
 
 **Os níveis de esforço** (o mesmo critério do VoePro):
@@ -81,8 +81,13 @@ que investigar em cada fonte.
 
 ## Decisões do Saulo já tomadas
 
-- **Projeto irmão** (não dentro do VoePro): mesmo Supabase, mesma Vercel,
-  código e deploy próprios.
+- ~~**Projeto irmão**~~ **superada em 31/10/2026.** Palavras do Saulo: "eu não
+  enxergo o radar como um terceiro sistema, é uma ferramenta dentro do VoePro;
+  a pessoa dá um clique no menu do Radar e ele aparece". O código continua
+  neste repositório e o papel de banco `srr_ofertas` continua (segurança
+  técnica), mas o destino é `voepro.srrviagens.com.br/ofertas`, com o mesmo
+  usuário do VoePro e do MilesPro. Mapa e riscos da fusão:
+  `C:SERSSAULOPROGRAMINGusaousao.md`.
 - **Trabalho contínuo num computador dedicado** que fica sempre ligado.
 - **Curadoria manual:** funcionário vê, analisa, aprova e posta no grupo.
 - **Origem BSB** acima de tudo; internacional pode sair de GRU ou GIG.
@@ -845,3 +850,97 @@ contra a API).
 - O calendário da Smiles confere a data e o preço "a partir de" em qualquer
   companhia, não o voo exato do alerta.
 - **Produção:** as migrações da V6 não foram aplicadas lá.
+
+### L0 — Painel no ar (construída 30–31/10/2026; publicação em andamento)
+
+**Decisões do Saulo nesta etapa** (mudaram a especificação)
+
+- **Nada de senha única.** "Eu não quero nada segmentado": a pessoa entra no
+  Radar com **o mesmo e-mail e a mesma senha do MilesPro** (o Supabase Auth do
+  projeto de **produção**, `milespro-production`). Os usuários pertencem ao
+  futuro painel central (`app.srrviagens.com.br`); hoje moram no MilesPro só
+  porque a central não existe.
+- **Lista de liberados, provisória.** Além da senha certa, a conta tem de
+  estar em `ofertas.acesso` (e-mail, ligado, quem liberou, quando), editada
+  em **Valores → Quem entra no Radar**. **Não é cadastro de pessoa: não
+  acrescente campos.** Se aposenta quando o acesso vier do VoePro.
+- **Banco de PRODUÇÃO hoje** (escolhido na caixinha, contra a recomendação):
+  a decisão da O0 ("produção para o publicado") volta a valer já. A vitrine
+  da produção nasce vazia e enche conforme o motor colhe.
+- **Endereço:** `ofertas.srrviagens.com.br` como **ponte** ("cria só o link
+  dele dentro do nosso domínio"), e um item "Radar" no menu do VoePro
+  apontando para ela. O definitivo é `voepro.srrviagens.com.br/ofertas`.
+- O VoePro foi ao ar em 31/10 em `voepro.srrviagens.com.br`; o Guardião da
+  fusão (outra sessão) conduziu os passos do Saulo e revisou o diff.
+
+**O que existe**
+
+- `src/proxy.ts` (nesta versão do Next o `middleware` virou `proxy`): roda
+  antes de tudo. Sem sessão do Auth, **toda tela e toda ação** voltam para
+  `/entrar` (303). Sem as variáveis do porteiro, nada abre além de `/entrar`,
+  que diz o que falta (falha fechada). Não confere a lista (sem banco no proxy).
+- `src/lib/acesso/acesso.ts`: `quemEntrou()` (sessão + lista),
+  `exigirAcesso()` na **primeira linha de cada ação** de `src/app/acoes.ts`
+  (19 de 19), `exigirAcessoNaTela()` em cada tela, logo depois de
+  `connection()`. **Ação ou tela nova tem de chamar um dos dois.**
+- `src/lib/acesso/supabase.ts`: os clientes do `@supabase/ssr` (cookies).
+- `/entrar` (`src/app/entrar/`): marca da SRR, captcha da Cloudflare
+  (Turnstile — o Auth de produção exige; `captchaToken` no
+  `signInWithPassword`), recados para senha errada, conta não liberada e
+  captcha. Conta com senha certa e fora da lista: a sessão é fechada na hora.
+- Cabeçalho: o e-mail de quem entrou e "Sair".
+- Valores: liberar, desligar, religar, tirar. Ninguém desliga a própria conta.
+- Migração `20261031015024_acesso` (só `ofertas`; RLS ligada; semente com
+  `saulo.rodrigues@gmail.com`). Aplicada no banco de **testes**; na produção
+  entra no primeiro deploy, junto com as 7 migrações do Radar que só estavam
+  nos testes (vitrine, conferência, smiles_sem_navegador, cativa, alertas ×3).
+  Revisadas pelo Guardião: nada fora do schema `ofertas`.
+- `package.json`: Node `24.x` (a Vercel oferece 24). `.vercelignore`: a
+  publicação pela linha de comando não leva `.env*` nem `.claude/` (as cópias
+  de trabalho de outras sessões, cada uma com o seu `.env`). `tsconfig` e
+  `eslint` também deixaram de ler `.claude/`.
+
+**Variáveis na Vercel** (projeto `srr-ofertas`, só Production; nomes, nunca valores)
+
+| variável | o que é | segredo? |
+|---|---|---|
+| `DATABASE_URL` | produção, porta 5432, usuário `srr_ofertas.<ref>` — o build roda `prisma migrate deploy` com ela | sim |
+| `PGBOUNCER_URL` | produção, porta 6543 (`pgbouncer=true`) — o painel usa em funcionamento | sim |
+| `NEXT_PUBLIC_SUPABASE_URL` | o Auth de produção | não |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | a chave pública do Auth (anon/publishable) | não |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | a chave pública do captcha (a do MilesPro/VoePro) | não |
+
+As duas primeiras saem do `.env.producao` gerado na O0 (`scripts/preparar-banco.mjs`).
+**A `DATABASE_URL` nunca com o usuário `postgres`**: a tabela de migrações do
+Prisma cairia em `public`, em cima da do MilesPro. O `.env` local também
+ganhou as três `NEXT_PUBLIC_*` (documentadas no `.env.example`).
+
+**Provado (no computador, banco de testes)**
+
+- Sem porteiro: `/`, `/valores`, `/saude`, `/buscas`, `/pacotes` e um POST de
+  ação → 303 para `/entrar` (com `?de=` nas telas); `/entrar` mostra o que
+  falta e nenhum formulário; logo e robots continuam abrindo.
+- `npx prisma migrate deploy` no banco de testes, que já tem migrações da V2
+  que a pasta não tem: aplicou só a `acesso`, sem reclamar.
+- `npm run check` passa.
+
+**Ficou de fora / para a etapa L**
+
+- O teste do **login de verdade** (Auth de produção + captcha) só se faz no
+  endereço publicado: o captcha só aceita os endereços cadastrados no widget
+  da Cloudflare (`ofertas.srrviagens.com.br`; `localhost` e o `.vercel.app`
+  não estão). Ver a linha "publicação" abaixo.
+- **Radar dentro do VoePro:** `basePath '/ofertas'` aqui + rewrite no
+  `next.config` do VoePro; acesso vindo do cadastro do VoePro (`crm.usuario`);
+  `ofertas.acesso` e `/entrar` se aposentam.
+- **Cookie:** em outro endereço o cookie é outro; entrar no Radar não entra
+  no VoePro até ele estar em `/ofertas`.
+- **O `.vercel.app` do Radar** fica aberto com a mesma porta (só o login muda
+  de endereço); proteção extra dele é da L (R5 do FUSAO.md).
+- **Toda troca da `DATABASE_URL` de Production** passa pelo revisor da fusão
+  antes: o build roda `migrate deploy` no banco que ela apontar.
+- O motor do computador do Saulo precisa apontar para a produção (a linha
+  `DATABASE_URL` do `.env` dele) e ser reiniciado; os pedidos de "Buscar
+  agora" e "Conferir agora" pela internet só são atendidos com ele ligado.
+- Backup: o automático do MilesPro está quebrado desde 08/10 (R17); antes
+  desta publicação o Saulo baixou um completo (~00:10 de 31/10).
