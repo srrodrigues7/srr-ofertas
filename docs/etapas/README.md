@@ -38,7 +38,8 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V4   | [Aprovação, card e legenda](V4-card-e-aprovacao.md) — aprovar com conferência, código de rastreio, arte e legenda prontas para postar (em paralelo com a V2) | V1b | alto | **aberta** |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
 | V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main; prova com o grupo de verdade pendente: monitor parado) |
-| L    | Ligar tudo — Vercel, GitHub, login, motor instalado no computador dedicado, alertas de saúde | quando o Saulo quiser | xalto | esperando |
+| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel com senha única da equipe, no banco de testes; motor segue no computador do Saulo | V6 | médio | **aberta** (30/10, para apresentar à equipe hoje) |
+| L    | Ligar tudo — o resto: banco de produção, domínio, GitHub, login por pessoa, motor no computador dedicado, alertas de saúde | L0 | xalto | esperando |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
 
 **Os níveis de esforço** (o mesmo critério do VoePro):
