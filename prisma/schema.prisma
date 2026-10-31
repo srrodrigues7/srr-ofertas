@@ -616,3 +616,25 @@ model AlertaPrograma {
   @@map("alerta_programa")
   @@schema("ofertas")
 }
+
+// ============================================================================
+// L0 — quem entra no painel.
+// ============================================================================
+
+/// Quem pode entrar no painel. A conta é a do MilesPro (o Auth do Supabase,
+/// no projeto de produção): mesmo e-mail, mesma senha. Esta lista diz quais
+/// dessas contas o Radar aceita; conta fora dela, ou desligada, não entra
+/// mesmo com a senha certa. Lista vazia = ninguém entra (falha fechada).
+/// Quando o Radar virar item do menu do VoePro (etapa L), a permissão passa a
+/// ser a do VoePro e esta tabela se aposenta.
+model Acesso {
+  /// Sempre em minúsculas.
+  email       String   @id
+  ativo       Boolean  @default(true)
+  /// O e-mail de quem liberou (ou "etapa L0", para o primeiro).
+  liberadoPor String?  @map("liberado_por")
+  criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  @@map("acesso")
+  @@schema("ofertas")
+}

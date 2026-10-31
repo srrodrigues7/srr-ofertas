@@ -1,7 +1,11 @@
 import { connection } from "next/server";
+import { exigirAcessoNaTela } from "@/lib/acesso/acesso";
 import { prisma } from "@/lib/prisma";
 import {
+  alternarAcesso,
   alternarFonte,
+  liberarAcesso,
+  tirarAcesso,
   apagarFaixa,
   salvarConfiguracao,
   salvarFaixa,
@@ -29,6 +33,7 @@ const fmt = (v: { toString(): string } | null | undefined) => (v == null ? "" : 
 
 export default async function ValoresPage() {
   await connection();
+  const eu = await exigirAcessoNaTela();
   const [programas, margens, parcelas, faixas, fontes, config, alertaOrigens, alertaProgramas] = await Promise.all([
     prisma.programa.findMany({ orderBy: { nome: "asc" } }),
     prisma.margem.findMany(),
@@ -39,6 +44,7 @@ export default async function ValoresPage() {
     prisma.alertaOrigem.findMany({ orderBy: { codigo: "asc" } }),
     prisma.alertaPrograma.findMany({ orderBy: [{ vezes: "desc" }, { exemplo: "asc" }] }),
   ]);
+  const acessos = await prisma.acesso.findMany({ orderBy: { email: "asc" } });
   const margem = new Map(margens.map((m) => [m.tipo, m]));
   const horizonte = faixas.length ? Math.max(...faixas.map((f) => f.ateMes)) + 1 : 0;
   const ajustaveis = config.filter((c) => !c.chave.startsWith("motor.") && !c.chave.startsWith("saude."));
@@ -226,6 +232,46 @@ export default async function ValoresPage() {
             <button className={s.botaoPequeno} type="submit">Salvar</button>
           </form>
         ))}
+      </section>
+      <section className={s.bloco}>
+        <h2>Quem entra no Radar</h2>
+        <p className={s.explica}>
+          A conta é a do MilesPro (mesmo e-mail, mesma senha). Aqui você diz quais contas o Radar aceita: quem não
+          está na lista, ou está desligado, não entra. Você não consegue desligar a sua própria conta.
+        </p>
+        {acessos.map((a) => (
+          <div key={a.email} className={a.ativo ? s.linhaForm : `${s.linhaForm} ${s.desligada}`}>
+            <b style={{ width: 300 }}>
+              {a.email}
+              {a.email === eu.email ? <small> (você)</small> : null}
+            </b>
+            <span className={s.explica} style={{ flex: 1 }}>
+              {a.ativo ? "pode entrar" : "desligado"}
+              {a.liberadoPor ? ` · liberado por ${a.liberadoPor}` : ""}
+            </span>
+            {a.email === eu.email ? null : (
+              <span className={s.acoes}>
+                <form action={alternarAcesso.bind(null, a.email, !a.ativo)}>
+                  <button className={s.botaoSecundario} type="submit">
+                    {a.ativo ? "Desligar" : "Religar"}
+                  </button>
+                </form>
+                <form action={tirarAcesso.bind(null, a.email)}>
+                  <button className={s.botaoSecundario} type="submit">
+                    Tirar
+                  </button>
+                </form>
+              </span>
+            )}
+          </div>
+        ))}
+        <form action={liberarAcesso} className={s.linhaForm}>
+          <label className={s.campo}>
+            <span>E-mail da conta do MilesPro</span>
+            <input className={s.entrada} style={{ width: 300 }} name="email" type="email" required placeholder="nome@srrviagens.com.br" />
+          </label>
+          <button className={s.botaoPequeno} type="submit">Liberar</button>
+        </form>
       </section>
     </div>
   );

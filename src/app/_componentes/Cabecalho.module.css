@@ -93,3 +93,30 @@
   stroke-linecap: round;
   opacity: 0.55;
 }
+
+/* Quem entrou, e a porta de saída. */
+.quem {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.sair {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.sair:hover {
+  background: var(--sunk);
+}

@@ -21,8 +21,8 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "SRR Ofertas",
   description: "SRR Ofertas — o radar de passagens da SRR Viagens",
-  // O painel ainda não tem senha (decisão do Saulo na etapa O0): ao menos não
-  // aparece em buscador. Ver também src/app/robots.ts.
+  // O painel pede login (L0), e ainda assim fica fora dos buscadores.
+  // Ver também src/app/robots.ts e src/proxy.ts.
   robots: { index: false, follow: false },
 };
 

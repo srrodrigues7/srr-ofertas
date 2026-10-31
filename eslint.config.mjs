@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "src/generated/**",
     // O pacote do instalador é montado a partir de instalador/, que já é lido.
     "pacote/**",
+    // As cópias de trabalho de outras sessões (worktrees) moram dentro da pasta.
+    ".claude/**",
   ]),
 ]);
 

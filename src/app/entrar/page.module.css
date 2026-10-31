@@ -1,0 +1,147 @@
+/* A tela de entrada: um cartão só, no meio, com a logo, o arco de assinatura
+   da marca e dois campos. Funciona no computador e no celular. */
+
+.palco {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.cartao {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 400px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 32px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.arco {
+  position: absolute;
+  right: -30px;
+  top: -14px;
+  width: 260px;
+  height: 74px;
+  pointer-events: none;
+}
+
+.arco path {
+  fill: none;
+  stroke: var(--brand-vivo);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.placa {
+  display: block;
+  border-radius: 14px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .placa {
+    background: #f1f5f9;
+  }
+}
+
+.logo {
+  display: block;
+  height: 56px;
+  width: auto;
+}
+
+.nome {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.sub,
+.explica {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.formulario {
+  width: 100%;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.campo input {
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: border-color 150ms;
+}
+
+.campo input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+.botao,
+.botaoSecundario {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: filter 150ms;
+}
+
+.botao {
+  border: 1px solid var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.botao:hover {
+  filter: brightness(1.08);
+}
+
+.botaoSecundario {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.erro {
+  width: 100%;
+  background: var(--crit-soft);
+  color: var(--crit);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.erro b {
+  color: inherit;
+}

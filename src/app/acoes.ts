@@ -3,10 +3,11 @@
 import { refresh } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { limitesDe } from "@/lib/configuracao";
+import { exigirAcesso } from "@/lib/acesso/acesso";
 
 /**
- * O que o painel grava. Sem login por enquanto (decisão da O0: só roda no
- * computador do Saulo); antes de publicar, a etapa L põe a proteção aqui.
+ * O que o painel grava. Toda ação começa por exigirAcesso() (L0): uma ação de
+ * servidor é um endereço público, e a porta tem de estar em cada uma.
  * Toda entrada é conferida antes de gravar.
  */
 
@@ -21,6 +22,7 @@ const codigo = (v: string) => (/^[A-Z]{3}$/.test(v.toUpperCase()) ? v.toUpperCas
 
 /** "Buscar agora": entra na fila; o motor pega em segundos. Clicar de novo não duplica. */
 export async function buscarAgora(buscaId: number) {
+  await exigirAcesso();
   await prisma.$executeRaw`
     INSERT INTO "ofertas"."busca_agora" (busca_id) VALUES (${buscaId})
     ON CONFLICT DO NOTHING`;
@@ -30,6 +32,7 @@ export async function buscarAgora(buscaId: number) {
 /** "Conferir agora" (V1b): o robô confere a oferta no portal da fonte. Entra na
  *  fila; o motor atende. Clicar de novo não duplica (índice único parcial). */
 export async function conferirAgora(ofertaId: string) {
+  await exigirAcesso();
   if (!/^\d{1,19}$/.test(ofertaId)) throw new Error("Oferta inválida.");
   await prisma.$executeRaw`
     INSERT INTO "ofertas"."conferencia_pedido" (oferta_id, motivo) VALUES (${BigInt(ofertaId)}, 'botao')
@@ -38,6 +41,7 @@ export async function conferirAgora(ofertaId: string) {
 }
 
 export async function salvarBusca(f: FormData) {
+  await exigirAcesso();
   const origem = codigo(texto(f, "origem"));
   const destino = codigo(texto(f, "destino"));
   const estadiaMin = numero(f, "estadiaMin");
@@ -58,16 +62,19 @@ export async function salvarBusca(f: FormData) {
 }
 
 export async function alternarBusca(id: number, ligada: boolean) {
+  await exigirAcesso();
   await prisma.busca.update({ where: { id }, data: { ligada } });
   refresh();
 }
 
 export async function apagarBusca(id: number) {
+  await exigirAcesso();
   await prisma.busca.delete({ where: { id } });
   refresh();
 }
 
 export async function salvarPrograma(f: FormData) {
+  await exigirAcesso();
   const id = texto(f, "id");
   const preco = numero(f, "precoMilheiro");
   if (preco != null && (preco <= 0 || preco > 500)) throw new Error("Milheiro: entre R$ 0,01 e R$ 500.");
@@ -76,6 +83,7 @@ export async function salvarPrograma(f: FormData) {
 }
 
 export async function salvarMargem(f: FormData) {
+  await exigirAcesso();
   const tipo = texto(f, "tipo");
   const percentual = numero(f, "percentual");
   const minimo = numero(f, "minimo");
@@ -91,6 +99,7 @@ export async function salvarMargem(f: FormData) {
 }
 
 export async function salvarParcela(f: FormData) {
+  await exigirAcesso();
   const parcelas = numero(f, "parcelas");
   const taxa = numero(f, "taxa");
   if (parcelas == null || !Number.isInteger(parcelas) || parcelas < 1 || parcelas > 24) throw new Error("Parcelas: de 1 a 24.");
@@ -104,6 +113,7 @@ export async function salvarParcela(f: FormData) {
 }
 
 export async function salvarFaixa(f: FormData) {
+  await exigirAcesso();
   const id = numero(f, "id");
   const deMes = numero(f, "deMes");
   const ateMes = numero(f, "ateMes");
@@ -117,18 +127,21 @@ export async function salvarFaixa(f: FormData) {
 }
 
 export async function apagarFaixa(id: number) {
+  await exigirAcesso();
   if ((await prisma.faixaBusca.count()) <= 1) throw new Error("Precisa sobrar ao menos uma faixa.");
   await prisma.faixaBusca.delete({ where: { id } });
   refresh();
 }
 
 export async function alternarFonte(id: string, ligada: boolean) {
+  await exigirAcesso();
   await prisma.fonte.update({ where: { id }, data: { ligada } });
   refresh();
 }
 
 /** As chaves numéricas da tabela de configuração, com os limites do catálogo. */
 export async function salvarConfiguracao(f: FormData) {
+  await exigirAcesso();
   const chave = texto(f, "chave");
   const limites = limitesDe(chave);
   const valor = numero(f, "valor");
@@ -145,6 +158,7 @@ export async function salvarConfiguracao(f: FormData) {
 /** "Conferi" — a equipe conferiu a oferta de alerta no site do programa (Azul,
  *  LATAM, Smiles executiva, ou a taxa que o alerta não deu). Fica o nome e a hora. */
 export async function conferirAlerta(ofertaId: string, f: FormData) {
+  await exigirAcesso();
   if (!/^\d{1,19}$/.test(ofertaId)) throw new Error("Oferta inválida.");
   const { conferirAMao } = await import("@/lib/alertas/conferencia");
   const milhas = numero(f, "milhas");
@@ -160,6 +174,7 @@ export async function conferirAlerta(ofertaId: string, f: FormData) {
 /** Valores: o nome de programa que aparece nos alertas → um programa do radar
  *  (ou nenhum = fora da vitrine). Os alertas são lidos de novo com a regra nova. */
 export async function salvarAlertaPrograma(nome: string, f: FormData) {
+  await exigirAcesso();
   const programaId = texto(f, "programa") || null;
   if (programaId && !(await prisma.programa.findUnique({ where: { id: programaId } }))) {
     throw new Error("Programa desconhecido.");
@@ -170,6 +185,7 @@ export async function salvarAlertaPrograma(nome: string, f: FormData) {
 
 /** Valores: de onde um alerta pode ir para a vitrine. */
 export async function salvarAlertaOrigem(f: FormData) {
+  await exigirAcesso();
   const c = codigo(texto(f, "codigo"));
   if (!c) throw new Error("Origem: código de 3 letras.");
   const soInternacional = texto(f, "soInternacional") === "on";
@@ -178,6 +194,7 @@ export async function salvarAlertaOrigem(f: FormData) {
 }
 
 export async function tirarAlertaOrigem(codigoOrigem: string) {
+  await exigirAcesso();
   await prisma.alertaOrigem.delete({ where: { codigo: codigoOrigem } });
   await lerAlertasDeNovo();
 }
@@ -186,5 +203,37 @@ export async function tirarAlertaOrigem(codigoOrigem: string) {
 async function lerAlertasDeNovo() {
   const { relerRecentes } = await import("@/lib/alertas/alertas");
   await relerRecentes();
+  refresh();
+}
+
+// --- L0: quem entra no painel -------------------------------------------------
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Valores: libera uma conta do MilesPro no Radar (ou religa uma desligada). */
+export async function liberarAcesso(f: FormData) {
+  const eu = await exigirAcesso();
+  const email = texto(f, "email").toLowerCase();
+  if (!EMAIL.test(email)) throw new Error("E-mail inválido.");
+  await prisma.acesso.upsert({
+    where: { email },
+    create: { email, liberadoPor: eu.email },
+    update: { ativo: true, liberadoPor: eu.email },
+  });
+  refresh();
+}
+
+/** Valores: liga ou desliga uma conta. Ninguém desliga a própria — senão fica do lado de fora. */
+export async function alternarAcesso(email: string, ativo: boolean) {
+  const eu = await exigirAcesso();
+  if (email === eu.email) throw new Error("Você não pode desligar o seu próprio acesso.");
+  await prisma.acesso.update({ where: { email }, data: { ativo } });
+  refresh();
+}
+
+export async function tirarAcesso(email: string) {
+  const eu = await exigirAcesso();
+  if (email === eu.email) throw new Error("Você não pode tirar o seu próprio acesso.");
+  await prisma.acesso.delete({ where: { email } });
   refresh();
 }

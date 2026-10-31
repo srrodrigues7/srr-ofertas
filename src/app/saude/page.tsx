@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { exigirAcessoNaTela } from "@/lib/acesso/acesso";
 import { duracao, lerSaude, type Saude } from "@/lib/motor/saude";
 import { mensagemDe } from "@/lib/erros";
 import { lerSaudeDasOperadoras, type SaudeOperadora } from "@/lib/revalidador/saude";
@@ -46,6 +47,7 @@ const ESTADO: Record<string, string> = {
 
 export default async function SaudePage() {
   await connection();
+  await exigirAcessoNaTela();
 
   let saude: Saude | null = null;
   let operadoras: SaudeOperadora[] = [];

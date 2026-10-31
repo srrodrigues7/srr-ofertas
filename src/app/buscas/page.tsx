@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { exigirAcessoNaTela } from "@/lib/acesso/acesso";
 import { prisma } from "@/lib/prisma";
 import { lerConfiguracao } from "@/lib/configuracao";
 import { alternarBusca, apagarBusca, buscarAgora, salvarBusca } from "../acoes";
@@ -13,6 +14,7 @@ import s from "../tela.module.css";
  */
 export default async function BuscasPage() {
   await connection();
+  await exigirAcessoNaTela();
   const [buscas, lugares, contagens, ultimosAgora, cfg] = await Promise.all([
     prisma.busca.findMany({ orderBy: [{ classe: "asc" }, { origem: "asc" }, { destino: "asc" }] }),
     prisma.lugar.findMany({ select: { codigo: true, cidade: true, pais: true } }),
