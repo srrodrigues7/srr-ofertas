@@ -1000,13 +1000,15 @@ não liberada com uma conta real de outra pessoa.
   para o `.vercel.app`, que está atrás do login da Vercel; o proxy do VoePro
   deixar `/ofertas` passar; o item de menu como `<a>`, não `<Link>` (troca de
   aplicação é navegação completa).
-- *A conferir antes de prometer o login único:* que o VoePro guarda a sessão
-  do Supabase em cookie (`@supabase/ssr`, projeto de produção, caminho `/`).
-  Aí o cookie `sb-unhzbeevczoxgwyfxxnv-auth-token` é o mesmo para os dois, e
-  quem entrou no VoePro já entra no Radar. O `/entrar` do Radar passa a
-  mandar para o login do VoePro com a volta para `/ofertas`.
+- *Login único (confirmado pelo Guardião da fusão em 02/11):* o VoePro guarda
+  a sessão no cookie padrão do `@supabase/ssr` (projeto de produção, sem nome
+  nem domínio próprio, path `/`; o `proxy.ts` dele é quem renova). Sob a
+  rewrite, o Radar recebe o mesmo cookie `sb-unhzbeevczoxgwyfxxnv-auth-token`,
+  e quem entrou no VoePro entra direto. O `/entrar` do Radar passa a mandar
+  para o `/login` do VoePro com a volta para `/ofertas`.
 - *Quem entra:* a lista `ofertas.acesso` continua (só e-mails liberados, sem
   dados de pessoa) até o painel central `app.srrviagens.com.br`.
 - Esforço estimado: médio. Primeiro o Radar com basePath publicado
   (`ofertas.srrviagens.com.br/ofertas` funcionando), depois o rewrite e o menu
-  no VoePro.
+  no VoePro. A etapa é aberta pela sessão de controle com o Saulo; o Guardião
+  revisa o diff (basePath, allowedOrigins, proxy) antes do deploy.
