@@ -1,336 +1,317 @@
-# Etapa L — O Radar dentro do VoePro (`voepro.srrviagens.com.br/ofertas`)
+# Etapa L — O Radar como telas do VoePro
 
-**Esforço: alto.** Não há tela nova nem dado novo. O peso está em três
-lugares: o **login** (quem entra no VoePro tem de entrar no Radar, e só
-essas pessoas), as **rotas de dois sistemas em produção**, e a ordem dos
-deploys (um passo fora de ordem tranca a equipe fora do Radar ou deixa uma
-porta aberta). Não é **xalto** porque nada aqui apaga dado nem mexe em
-dinheiro, e a volta leva minutos (tirar uma linha do VoePro). Se o Saulo
-escolher a opção B da pergunta 1 (o acesso vem do VoePro), entra uma
-permissão de banco entre os dois schemas: continua alto, mas passa pelo
-Guardião da fusão antes de qualquer coisa.
+**Esforço: alto, encostado no xalto.** Não há dado novo nem migração de
+dados. O peso mudou de lugar: as telas do Radar passam a ser **publicadas
+com o VoePro**, e o VoePro passa a ter uma segunda chave de banco (a das
+telas do Radar). Um erro aqui não derruba só o Radar: derruba ou expõe o
+sistema que a agência usa o dia inteiro, ou alcança o schema `ofertas`.
+Por isso cada passo vai em deploy próprio, com o revisor da fusão antes. Não
+é xalto porque nada apaga dado e cada passo volta com um "Promote" do
+deploy anterior.
 
-> O quadro antigo chamava de "L — ligar tudo" um pacote maior (Radar no
-> VoePro, GitHub, motor no computador dedicado, alertas de saúde). O GitHub
-> já foi feito na L0. Esta especificação cobre **só a fase 1b do
-> [`FUSAO.md`](../../../FUSAO/FUSAO.md)**: o Radar como item do VoePro. O
-> resto vira **L2** (pergunta 4).
+## O que o Saulo decidiu (02/11/2026)
+
+1. **Quem pode abrir o Radar decide a gestão de acesso da tela Equipe do
+   VoePro.** `ofertas.acesso` e o `/entrar` do Radar se aposentam.
+2. **"O Radar não vai ter uma página separada do VoePro. Ele é dentro do
+   VoePro. É só um botão no menu: clico, abre a tela normalmente, igual
+   todas as outras telas do VoePro."** Menu lateral do VoePro, a mesma
+   casca, sem "← VoePro".
+3. **O endereço oficial é `voepro.srrviagens.com.br/ofertas`.**
+   `ofertas.srrviagens.com.br` só redireciona para lá e, se puder, se
+   aposenta depois.
+4. **O motor segue no notebook para lançar rápido**; ir para um servidor na
+   nuvem é a etapa [L2](L2-motor-na-nuvem.md).
+
+A primeira versão desta especificação (Radar como aplicação à parte,
+repassada pelo VoePro com `basePath` e rewrite) caiu com a resposta 2: dava a
+mesma URL, mas não o menu do VoePro. Com ela caem os riscos de cookie
+repassado, de renovação dupla do token e de origem das ações.
 
 ## O objetivo, em uma frase
 
-**A pessoa está no VoePro, clica em "Radar de ofertas" no menu e o Radar
-abre em `voepro.srrviagens.com.br/ofertas`, sem pedir login de novo.**
+**O item "Radar de ofertas" do menu do VoePro abre as telas do Radar
+(Passagens, Pacotes, Pedidos de busca, Valores, Saúde) como qualquer outra
+tela do VoePro**, para quem tem o interruptor ligado na Equipe.
 
-Palavras do Saulo (31/10): "eu não enxergo o radar como um terceiro sistema,
-é uma ferramenta dentro do VoePro; a pessoa dá um clique no menu do Radar e
-ele aparece".
-
-## O que já existe (02/11/2026)
-
-- **Radar no ar** em `https://ofertas.srrviagens.com.br` (L0): Vercel
-  `srr-ofertas`, funções em São Paulo, banco de produção (schema `ofertas`,
-  papel `srr_ofertas`), login pelo Auth de produção (a mesma conta do
-  MilesPro) + captcha + a lista `ofertas.acesso`. O motor roda no notebook
-  do Saulo, apontado para a produção.
-- **VoePro no ar** em `https://voepro.srrviagens.com.br`, com o item "Radar
-  de ofertas" no menu apontando para fora, em aba nova
-  (`srr-crm/src/app/components/Sidebar.tsx`).
-- **Login único é possível** (conferido pelo Guardião na noite de 01/11): o VoePro
-  guarda a sessão no cookie padrão do `@supabase/ssr`
-  (`sb-unhzbeevczoxgwyfxxnv-auth-token`, sem domínio próprio, path `/`). Sob
-  o endereço do VoePro, o Radar recebe esse mesmo cookie.
-- **Visual:** o kit da SRR (etapa D) já está aplicado no Radar no ramo
-  `l-visual/kit-srr`, esperando o "sim" do Saulo. Os cookies de tema e cor
-  (`srr_tema`, `srr_cor`) têm o mesmo nome nos dois sistemas: sob
-  `/ofertas`, o tema escolhido no VoePro passa a valer no Radar sozinho —
-  **depois** que a etapa D do VoePro estiver no ar (o VoePro publicado ainda
-  não tem o kit). Se um dia o kit dos dois divergir, um valor de cookie que
-  o Radar não conhece cai no padrão (claro e verde): `limparVisual` já faz isso.
-
-## Como funciona (o desenho)
-
-O jeito que o próprio Next recomenda para dois sistemas no mesmo endereço
-("multi-zones", `node_modules/next/dist/docs/01-app/02-guides/multi-zones.md`):
+## O desenho
 
 ```
-navegador ──► voepro.srrviagens.com.br/ofertas/valores
-                 │  o VoePro não tem essa tela: repassa (rewrite),
-                 │  levando os cookies do VoePro
-                 ▼
-              ofertas.srrviagens.com.br/ofertas/valores   ← o Radar, deploy próprio
-                 │  lê a sessão do cookie, confere quem é, desenha a tela
-                 ▼
-              a resposta volta pelo VoePro para o navegador
+  srr-crm (VoePro, Vercel)                       srr-ofertas (Radar)
+  ┌────────────────────────────────┐             ┌───────────────────────────┐
+  │ menu ─► /ofertas/...            │             │ motor (notebook; L2: nuvem)│
+  │ telas do Radar + guarda         │             │ schema.prisma + migrações │
+  │   (código do VoePro)            │◄── cópia ───│ src/pacote/  (o pacote)   │
+  │ src/radar/  pacote copiado,     │  (script)   │                           │
+  │   não se edita lá               │             └─────────────┬─────────────┘
+  │ cliente "ofertas" (2º Prisma),  │                           │ srr_ofertas
+  │   papel só de telas, sem DDL    │                           │ (dono, migra)
+  └──────────────┬─────────────────┘                           │
+     crm (postgres) │  ofertas (srr_ofertas_tela)               │
+                    └──────── Supabase milespro-production ─────┘
 ```
 
-- O Radar passa a morar em `/ofertas` também no domínio dele (`basePath`).
-  Tudo dele — telas, arquivos, ações — fica debaixo de `/ofertas`, então não
-  colide com nada do VoePro.
-- O VoePro ganha **uma regra de repasse** (`/ofertas` e `/ofertas/:path*` →
-  `https://ofertas.srrviagens.com.br/ofertas/...`) e o item do menu vira um
-  link normal na mesma aba.
-- **Código continua em dois repositórios, deploys separados, bancos
-  separados por schema.** Nada do VoePro vai para o Radar e vice-versa.
+**Quem é dono de quê** (para não virar dois Radares):
+
+| peça | mora em | quem muda |
+|---|---|---|
+| Motor, coletores, alertas, revalidador | `srr-ofertas` | sessão do Radar |
+| Schema `ofertas` e **toda migração dele** | `srr-ofertas` | sessão do Radar, com o revisor |
+| **O pacote**: o que as telas precisam (ler a vitrine, o preço de venda, a configuração e o catálogo de chaves, a saúde, pedir "Buscar agora"/"Conferir", gravar Valores) | `srr-ofertas/src/pacote/`, **copiado** para `srr-crm/src/radar/` por script | sessão do Radar; no VoePro **não se edita** |
+| As telas (páginas, componentes, CSS), a guarda e o cliente do `ofertas` | `srr-crm/src/app/ofertas/` e `srr-crm/src/lib/` | sessão do VoePro |
+
+**Quem grava no `ofertas` continua sendo código do Radar** (o pacote), com
+uma chave do Radar. O código do VoePro só chama as funções do pacote, depois
+da guarda dele. Esta é a exceção ao princípio 1 do FUSAO ("ninguém escreve no
+schema do outro"), e ela precisa estar escrita lá (ver "Antes de começar").
+
+As telas do Radar já são finas (medido em 02/11): as ações delas **só gravam
+pedidos e valores no banco**; quem trabalha é o motor. Nada do motor roda
+dentro de uma tela.
+
+## Antes de começar (pré-condições do passo 1)
+
+- **O Guardião atualiza o FUSAO**: fase 1b (de "basePath + rewrite" para
+  "telas no VoePro, pacote copiado do Radar"); princípio 1 (a exceção acima);
+  R7 (exceção para o pacote: não se copia código de banco entre repositórios,
+  **menos** o pacote, por script, com as duas pontas no mesmo Prisma); R5
+  (fecha no passo 4); R3 (uma pool a mais no VoePro); a tabela da seção 1 (o
+  VoePro passa a usar dois usuários de banco); o diagrama da seção 2.
+- **O Saulo responde a pergunta 5 e a 6** (abaixo).
 
 ## O que muda
 
-**No Radar (esta sessão):**
+### No Radar (`srr-ofertas`, esta sessão) — passo 1
 
-1. `next.config.ts`: `basePath: "/ofertas"`; `experimental.serverActions.allowedOrigins`
-   com `voepro.srrviagens.com.br` (os botões do Radar chegam com a origem do
-   VoePro; sem isso, o Next recusa); um redirecionamento de `/` para
-   `/ofertas` com `basePath: false`, para quem abrir
-   `ofertas.srrviagens.com.br` não ver erro.
-2. `src/proxy.ts`: o redirecionamento para a entrada passa a ser montado com
-   `pedido.nextUrl.clone()` (o `new URL("/entrar", …)` de hoje perde o
-   `/ofertas`); conferir se o `matcher` conta com o prefixo (a documentação
-   não diz: **prova obrigatória**, ver abaixo).
-   **Só o VoePro renova a sessão** (desenho padrão, não contingência): sob
-   `/ofertas` o porteiro do VoePro já renovou o token antes de repassar; se o
-   Radar renovar de novo no mesmo pedido, a resposta volta com dois
-   `Set-Cookie` para o mesmo nome e o Auth pode tratar como reuso do token de
-   renovação e derrubar a sessão nos três sistemas (risco L-2). O porteiro do
-   Radar passa a **só ler** a sessão quando o pedido chega pelo VoePro, e
-   repassa os cabeçalhos de "não guardar em cache" como o VoePro faz (o
-   `clienteNoProxy` de hoje ignora esse segundo argumento).
-2b. `src/app/entrar/acoes.ts`: `signOut({ scope: "local" })` nas duas
-   chamadas. Hoje o `signOut()` sem escopo usa o padrão da biblioteca,
-   **global**: sair do Radar desloga a pessoa do MilesPro e do VoePro em todos
-   os aparelhos. Isso já vale na L0 e tem conserto próprio (C3 no README),
-   que deve vir **antes** desta etapa. Dentro do VoePro, o "Sair" do Radar
-   passa a ser o do VoePro (ou some do cabeçalho do Radar).
-3. A logo (`<img src="/logo-srr.png">` no cabeçalho e na entrada): passa a
-   usar o prefixo. Os outros caminhos do código (`<Link>`, `redirect()`) o
-   Next prefixa sozinho.
-4. A tela de entrada: sob o VoePro, quem chega **sem sessão** vai para o
-   **`/login` do VoePro** com a volta para `/ofertas`, não para o `/entrar`
-   do Radar (que tem o captcha e um formulário próprio). Quem chega **com
-   sessão mas não liberado** continua vendo o recado "não liberada" do
-   Radar: se fosse mandado ao `/login` do VoePro, o porteiro de lá (já
-   conectado) o jogaria na página inicial do VoePro, sem explicação. O
-   `/entrar` completo fica só para quem abrir o domínio antigo diretamente,
-   até a pergunta 3 decidir.
-5. Um link "← VoePro" no cabeçalho do Radar (pergunta 2).
-6. Cabeçalhos de segurança: o `headers()` do VoePro (`/:path*`) **já cai
-   sobre as respostas repassadas**. O Radar põe os seus só para o domínio
-   próprio, com valores **idênticos** aos do VoePro (dois `X-Frame-Options`
-   diferentes valem como inválidos). Anotado: uma política de conteúdo mais
-   dura no VoePro (`script-src`) passaria a valer para o Radar e teria de
-   liberar o captcha da Cloudflare e os scripts do Radar.
-7. **Quem entra (pergunta 1).** O destino decidido em 31/10 é o acesso vir do
-   VoePro. Quando vier: o VoePro publica uma visão de **duas colunas** (id do
-   Auth, Radar ligado/desligado) num **schema de contrato próprio** (molde do
-   `milespro_vitrine`; por exemplo `voepro_vitrine`), nunca dentro de `crm`
-   (o papel `srr_ofertas` não ganha acesso ao `crm`). O Radar lê por SQL
-   direto (`$queryRaw`), **sem acrescentar esse schema ao `datasource` do
-   Prisma** (R2). A chave é o id da conta (`claims.sub`), não o e-mail.
-   `ofertas.acesso` e a tela "Quem entra no Radar" se aposentam depois de uma
-   semana com as duas conferências batendo.
+1. **A saída do gerador do Prisma muda** de `src/generated/prisma` para
+   **`src/generated/ofertas`**, e todo import passa a
+   `@/generated/ofertas/client`. É o mesmo caminho nos dois repositórios e
+   não colide com o cliente do `crm` do VoePro (que mora em
+   `src/generated/prisma` e é commitado lá). **Isto mexe no motor** (ele
+   importa o cliente), e o motor se atualiza sozinho do `main` (o vigia roda
+   `npm ci` e o `postinstall` gera o cliente): a prova 1 inclui o motor.
+2. **O pacote** (`src/pacote/`): o que as telas usam, sem Next, sem login,
+   sem tela. Regras do pacote:
+   - importa só de dentro dele e de `@/generated/ofertas/client`; nunca
+     `@/lib/*` nem `@/generated/prisma`;
+   - **recebe o cliente do banco de quem o usa** (não abre conexão sozinho);
+   - as funções que gravam recebem "quem fez" como parâmetro: o **id da conta
+     do Auth** (`authUserId`), e o e-mail só como texto de apoio (no VoePro o
+     e-mail da pessoa pode estar vazio).
+   O motor continua usando `configuracao.ts`, `preco.ts`, `alertas/regras.ts`
+   e as saúdes; elas passam a morar no pacote e o motor importa de lá.
+3. **As telas do próprio Radar** (`ofertas.srrviagens.com.br`) passam a usar o
+   pacote: ele é provado aqui antes de ir para o VoePro.
+4. **O script `scripts/exportar-pacote.mjs`**, irmão do `exportar-kit.mjs`:
+   - copia `src/pacote/` para `srr-crm/src/radar/` e o `schema.prisma` para
+     `srr-crm/prisma/ofertas/schema.prisma`, **reescrevendo o bloco
+     `generator`** para a saída `../../src/generated/ofertas` (o caminho certo
+     a partir da pasta da cópia);
+   - escreve `ORIGEM.md` com o commit;
+   - **recusa**: se a cópia de lá tiver mudança não commitada; se algum
+     arquivo do pacote importar `@/lib/` ou `@/generated/prisma`; se o
+     `prisma`/`@prisma/client` do VoePro não for o mesmo 7.10;
+   - não commita, não toca banco nem rede.
+5. Nenhuma migração, nenhuma tabela nova neste passo.
 
-**No VoePro (a sessão do VoePro, não esta):**
+### No VoePro (`srr-crm`, a sessão do VoePro) — passos 2 e 3
 
-8. `next.config.ts`: as duas regras de repasse (`/ofertas`,
-   `/ofertas/:path*`), para `https://ofertas.srrviagens.com.br` — **nunca**
-   para o `.vercel.app`, que está atrás do login da Vercel.
-9. `src/proxy.ts`: `/ofertas` sem sessão, por GET → `/login?volta=/ofertas`
-   (o porteiro do VoePro já faz isso, e o `voltaSegura` dele aceita
-   `/ofertas`: conferido pelo revisor da fusão). **POST sem sessão ele não
-   redireciona**: atravessa até o Radar, que responde 303 para
-   `/ofertas/entrar` e não executa a ação.
-   **O repasse só se prova na produção:** fora dela (`VOEPRO_AMBIENTE` ≠
-   `producao`) o `acessoDeFora` do VoePro responde 404 a quem vem de fora, e
-   as variáveis do VoePro só existem em Production — a prévia da Vercel não
-   serve. No computador, o VoePro usa o Auth de teste e repassaria para o
-   Radar de produção (ambientes misturados). Decisão técnica desta etapa: o
-   `destination` fixo no código (`https://ofertas.srrviagens.com.br`), sem
-   variável nova; por isso o passo 2 se divide em 2a e 2b (abaixo).
-10. O menu: "Radar de ofertas" com `href="/ofertas"`, **`<a>`** e não
-    `<Link>` (trocar de sistema é carregar a página inteira), na mesma aba.
-11. Se a pergunta 1 for B: a visão de contrato e o interruptor "Radar" na
-    tela Equipe.
+Esta sessão **não escreve no `srr-crm`**. Os passos 2 e 3 vão como tarefa
+escrita para a sessão do VoePro, com estas exigências:
+
+6. **O segundo cliente, só do `ofertas`:**
+   - um **`prisma.ofertas.config.ts`** próprio, com `schema` apontando para a
+     cópia, **sem `migrations`** e com `datasource.url` vazio (falha fechada,
+     como o `prisma.config.ts` do Radar). Usado só por
+     `prisma generate --config prisma.ofertas.config.ts`. Assim um `migrate`
+     com o `schema` do `ofertas` nunca carrega o `prisma.config.ts` do VoePro
+     (que aponta para o `postgres` e para as migrações do `crm`);
+   - o segundo `generate` e um `prisma validate` da cópia entram no `build` e
+     no `check` do VoePro; `src/generated/ofertas` é commitado lá, como o do
+     `crm`;
+   - **nenhuma URL da porta 5432 do `ofertas` no VoePro**, nunca.
+7. **A conexão:** variável nova **`OFERTAS_PGBOUNCER_URL`** (6543, pooler),
+   só em Production, com o papel da pergunta 6. O cliente nasce **só na
+   primeira consulta** (como o `src/lib/prisma.ts` do Radar), com **chave
+   própria em `globalThis`** (não a `prisma` do VoePro), pool 2 por
+   instância, e **nunca é importado pela casca nem pelo menu**: sem a
+   variável, só as telas do Radar mostram o erro; o VoePro segue de pé.
+8. **Uma regra de eslint** (`no-restricted-imports`) no VoePro: o cliente do
+   `ofertas` e `@/generated/ofertas` só dentro de `src/radar/` e do arquivo
+   que cria o cliente.
+9. **As telas** em `src/app/ofertas/` (passagens, pacotes, buscas, valores,
+   saúde), na casca do VoePro, com as abas do Radar no topo da área de
+   conteúdo. Os CSS do Radar já usam as variáveis do kit (a etapa D está nos
+   dois).
+10. **A guarda:** interruptores novos (pergunta 5). Toda tela chama
+    `exigirTela`, toda ação `exigirAcao`, antes de tocar no banco. Os
+    interruptores moram no código e em `crm.usuario.ajustes`, que já existe:
+    **sem migração**. Os testes de acesso do VoePro (`testar:acesso`,
+    `conferir:acesso`) crescem com eles.
+11. **O menu:** "Radar de ofertas" → `/ofertas`, `<Link>` normal, mesma aba,
+    só para quem tem o interruptor.
+12. **Nada de rota nova em `src/app/api/`** para o Radar. A leitura de prova
+    do passo 2 é um script ou um bloco na tela de Saúde do Radar, com guarda.
+
+### Depois — passo 4 (resposta 3)
+
+13. `ofertas.srrviagens.com.br` passa a só redirecionar para
+    `voepro.srrviagens.com.br/ofertas`; o painel próprio, o `/entrar`, o
+    captcha e `ofertas.acesso` se aposentam; o projeto da Vercel do Radar vira
+    só o redirecionamento (ou sai, se o redirecionamento for feito no DNS).
+    Isso fecha o `.vercel.app` aberto (R5) e corta builds (R16).
+14. **Atenção, R11:** hoje o build da Vercel do Radar é o **único caminho
+    automático** das migrações do `ofertas` para a produção. Quando ele parar
+    de migrar, a ordem de toda migração nova do Radar passa a ser: (a)
+    `migrate deploy` na produção pela 5432 com o `srr_ofertas`, rodado pelo
+    Saulo, com linha no DIARIO; (b) push para o `main` (o motor se atualiza);
+    (c) exportar o pacote; (d) deploy do VoePro. Isso fica escrito no README
+    do Radar antes do passo 4.
 
 ## O que não muda
 
-- **O motor.** Continua no notebook do Saulo, escrevendo só em `ofertas`.
-  Ele não sabe de endereço nenhum (R10 do FUSAO: o motor fica neste
-  repositório; só a tela entra no VoePro).
-- **O banco.** Nenhuma tabela nova, nenhuma migração (exceto a visão da
-  opção B, que é do VoePro). O papel `srr_ofertas` continua enxergando só
-  `ofertas`.
-- **O MilesPro.** Nada. Nem domínio, nem Auth, nem código. O Site URL do Auth
-  é do MilesPro e não é tocado; a Redirect URL `https://voepro…/**` já existe.
-- **As telas do Radar.** Mesmas abas, mesmos botões, mesmo visual (o do kit).
-- **O domínio `ofertas.srrviagens.com.br`** continua existindo: é para onde
-  o VoePro repassa (pergunta 3).
+- **O motor fica no `srr-ofertas`** e no notebook (R10); só muda de onde
+  importa o cliente e as funções que foram para o pacote.
+- **O banco:** nenhuma tabela, nenhuma migração de dados. O `ofertas`
+  continua com um dono só para migração (`srr_ofertas`).
+- **O MilesPro:** nada.
+- **O login:** o do VoePro, sem mudança.
 
-## Perguntas de negócio que esta etapa leva ao Saulo
+## Perguntas ao Saulo
 
-**1. Quem pode abrir o Radar?**
+**5. Um interruptor ou dois?**
+- **A) Um só, "Radar":** quem tem, vê tudo e muda tudo, inclusive margem e
+  milheiro em Valores.
+- **B) Dois, "Radar" e "Radar: valores":** a curadoria vê, busca e confere;
+  mudar margem, milheiro e regras é de quem o Saulo escolher.
+- Nos dois casos, **todo Administrador do VoePro ganha os interruptores
+  sozinho** (é assim que o VoePro trata o Administrador hoje).
+- **Recomendação: B.** Valores muda o preço que vai para o cliente; é o mesmo
+  cuidado que o VoePro já tem com Configurações.
 
-- **A) A lista do Radar continua** (Valores → "Quem entra no Radar"). Ganha:
-  zero mudança no banco, a etapa fica menor. Custa: liberar alguém em dois
-  lugares (Equipe do VoePro e Valores do Radar), e desligar em dois.
-- **B) O VoePro decide:** um interruptor "Radar de ofertas" na tela Equipe
-  do VoePro; o Radar só lê. Ganha: um lugar só, como o FUSAO pede
-  (`acesso = crm.usuario`). Custa: uma visão de contrato no banco entre os
-  dois sistemas, feita pela sessão do VoePro e revisada pelo Guardião.
-- **C) Quem está ativo no VoePro entra no Radar.** Ganha: nada a configurar.
-  Custa: o Radar mostra custo, margem e fonte; toda a equipe do VoePro
-  passaria a ver.
-- **Atenção:** a decisão de 31/10 já registrada no FUSAO (seção 0, fase 1b
-  e seção 6: "pessoa separada não") é a **B**: a lista do Radar "é ponte e
-  se aposenta quando o Radar entrar no menu".
-- **Recomendação: B como destino, com A por no máximo duas semanas.**
-  Primeiro o Radar entra no VoePro sem mexer em quem pode entrar (um risco
-  por vez); o passo 4 (a troca para B) é **obrigatório**, com prazo, e as
-  duas listas ficam conferidas lado a lado por uns dias. Se o Saulo escolher
-  isso, é um desvio temporário da decisão de 31/10 e o Guardião registra no
-  FUSAO.
+**6. Com que chave as telas entram no banco?**
+- **A) A chave do Radar de hoje (`srr_ofertas`).** Ganha: nada a preparar.
+  Custa: esse papel é **dono** do schema `ofertas` e pode apagar qualquer
+  tabela dele. Um erro nas telas do VoePro teria esse poder.
+- **B) Uma chave só para as telas (`srr_ofertas_tela`):** lê o que as telas
+  mostram e grava **só** nas filas ("Buscar agora", "Conferir") e nos
+  valores; não cria, não muda e não apaga tabela. Custa: preparar o papel
+  uma vez (pelo `scripts/preparar-banco.mjs`, com o Saulo, linha no DIARIO);
+  tabela nova do Radar que as telas usarem precisa de permissão (a regra
+  padrão do Postgres já cobre as próximas).
+- **Recomendação: B.** É a mesma lógica que já separa o Radar do resto do
+  banco, um degrau abaixo.
 
-**2. Como o Radar aparece dentro do VoePro?**
+## Os passos (cada um com o "sim" do Saulo e em deploy próprio)
 
-- **A) Tela inteira do Radar**, com o cabeçalho dele (abas, tema) e um link
-  "← VoePro" no canto. Ganha: pronto nesta etapa. Custa: o menu lateral do
-  VoePro some enquanto se está no Radar.
-- **B) Dentro da moldura do VoePro**, com o menu lateral. Custa: só dá
-  juntando o código dos dois sistemas num repositório (fase 5 do FUSAO,
-  opcional e sem data).
-- **Recomendação: A.** O visual já é o mesmo (kit), então a troca de tela não
-  parece outro sistema.
-
-**3. E o endereço `ofertas.srrviagens.com.br`?**
-
-- **A) Continua só como "porta dos fundos"**: o VoePro repassa para ele, e
-  quem digitar o endereço direto cai no login do VoePro e volta para
-  `voepro…/ofertas`. Ganha: links antigos continuam funcionando. Custa: um
-  domínio a mais para manter (DNS e o widget do captcha).
-- **B) Desligar o domínio** e o VoePro repassar para o endereço interno da
-  Vercel. Custa: o endereço interno está atrás do login da Vercel; para
-  passar seria preciso uma chave de passagem guardada no VoePro. Mais peças,
-  mais risco.
-- **Recomendação: A.**
-
-**4. O resto do antigo "L"** (motor num computador dedicado, sempre ligado;
-avisos de saúde no celular): **proposta** de separar numa etapa **L2**,
-aberta quando o Saulo decidir sobre o computador. Hoje o motor no notebook
-funciona; misturar as duas mudanças aumenta o risco das duas.
-
-## O plano, em passos (cada passo com o "sim" do Saulo antes)
-
-| passo | o quê | quem | pronto quando |
+| passo | o quê | onde | pronto quando |
 |---|---|---|---|
-| 0 | O visual (`l-visual/kit-srr`) aprovado e no `main`; o "Sair" local (C3) publicado | Radar | Saulo aprovou as fotos; prova 12 |
-| 1 | Radar com `basePath`, `allowedOrigins`, proxy (só lê a sessão sob o VoePro), logo, `/`→`/ofertas`, cabeçalhos, link "← VoePro" — **publicado só no domínio dele** | Radar | `ofertas.srrviagens.com.br/ofertas` funciona inteiro (provas 1–4) |
-| 2a | **Só o repasse** no VoePro, num deploy que não leve mais nada | VoePro | provas 5–9, digitando `voepro…/ofertas` (ninguém da equipe vê ainda) |
-| 2b | O item do menu | VoePro | a equipe clica e entra |
-| 3 | O `/entrar` do Radar manda quem está sem sessão para o `/login` do VoePro | Radar | provas 9 e 10 |
-| 4 | Visão de contrato + interruptor na Equipe do VoePro; aposentar `ofertas.acesso` (**obrigatório**, prazo combinado na pergunta 1) | VoePro + Radar + Guardião | prova 11, uma semana batendo |
+| 0 | `publicar/c3-e-visual` no ar (visual + "Sair" só do Radar) | Radar | já aprovado; o Saulo empurra |
+| 1 | Saída `src/generated/ofertas`; o pacote; o Radar e o motor usando o pacote; o script de exportar | Radar | provas 1 e 2 |
+| 1b | (pergunta 6 = B) o papel `srr_ofertas_tela`, no banco de testes e depois na produção | Saulo + Radar + Guardião | prova 3 |
+| 2 | Segundo cliente, config própria, variável nova, eslint, **sem tela** | VoePro | provas 4 e 5 |
+| 3 | As telas em `/ofertas` e os interruptores, **menu escondido** | VoePro | provas 6 a 10 |
+| 3b | O item do menu | VoePro | a equipe clica e entra |
+| 4 | Redirecionamento do domínio antigo; aposentar o painel próprio; a nova rota de migração escrita | Radar + Vercel + DNS | prova 11, depois de uma semana dos passos 3 e 3b sem queixa |
 
-Entre o passo 1 e o 2b, o item do menu do VoePro aponta para
-`ofertas.srrviagens.com.br`, que redireciona para `/ofertas`: ninguém fica
-sem Radar no meio do caminho.
+**Cada deploy leva só o seu passo.** O `master` local do VoePro está à
+frente do publicado (etapa D, rodadas da 10a): os passos 2 e 3 não levam
+isso junto sem lista e revisão própria. No Radar, até o passo 4, todo push
+ao `main` roda `migrate deploy` na produção: conferir
+`ofertas._prisma_migrations` antes e depois, e nenhuma migração nova no
+`main` junto com a L (a C2-A, feriados, vem depois). Builds somados (R16):
+pelo menos sete; nada de push de teste.
 
-**Cada deploy leva só o seu passo.** O `master` local do VoePro está 45
-commits à frente do publicado (etapa D, rodadas da 10a): o deploy do 2a
-não pode levar isso junto sem lista e revisão própria. No Radar, o build
-roda `prisma migrate deploy` na produção a cada deploy: antes e depois de
-cada deploy desta etapa, conferir `ofertas._prisma_migrations`, e **nenhuma
-pasta nova em `prisma/migrations/`** pode estar no `main` junto (a C2-A, que
-cria a tabela de feriados, vem depois, com revisão própria). São pelo menos
-seis builds somando os dois sistemas (R16): nada de push de teste.
+**Teste antes da produção:** fora da produção, o VoePro só abre no próprio
+computador (`acessoDeFora`), e a prévia da Vercel dá 404. As provas 6 a 10
+rodam **primeiro no computador, com o VoePro no banco de testes**, que já tem
+as 9 migrações do `ofertas` e o papel do Radar (conferir antes; com a
+pergunta 6 = B, o papel novo nasce primeiro lá).
 
 ## Riscos
 
-| # | risco | gravidade | como evitar |
+| # | risco | grav. | como evitar |
 |---|---|---|---|
-| L-1 | **O cookie de sessão não chega ao Radar pelo repasse** (ou a renovação do Radar não volta ao navegador): a pessoa fica presa entre o login do VoePro e o do Radar | ALTO | prova 6 antes de pôr o item no menu; se falhar, o passo 2 não vai |
-| L-2 | **Dois porteiros renovando a mesma sessão no mesmo pedido**: o do VoePro renova antes de repassar; se o Radar receber o token velho e renovar de novo, volta com dois `Set-Cookie` e o Auth pode ver reuso do token de renovação e derrubar a sessão nos três sistemas | ALTO | desenho padrão: **só o VoePro renova**, o Radar só lê sob `/ofertas`; prova 7 com o token vencido e o primeiro pedido direto no Radar, por GET e por POST |
-| L-11 | **"Sair" do Radar desloga de tudo** (escopo global, padrão da biblioteca) — já vale hoje | ALTO | C3 antes desta etapa; prova 12 |
-| L-12 | **Deploy do VoePro levando o que não foi revisado** (master 45 commits à frente) | MÉDIO | 2a num deploy só com o repasse |
-| L-13 | **Migração indo à produção sem revisão** pelo build do Radar | MÉDIO | `_prisma_migrations` antes/depois; nenhuma migração no `main` junto com a L |
-| L-3 | **Botões do Radar recusados** pela proteção do Next contra pedido de outro site (a origem é o VoePro) | ALTO | `allowedOrigins` com o domínio exato do VoePro, nada de curinga; prova 8 |
-| L-4 | **Porta aberta por fora**: o domínio do Radar e o `.vercel.app` continuam respondendo | ALTO (R5) | o Radar confere a sessão **e** a lista em toda tela e ação, como hoje — o repasse não substitui isso; o `.vercel.app` segue atrás do login da Vercel; prova 4 |
-| L-5 | **`matcher` do proxy sem o prefixo**: alguma tela do Radar abre sem passar pela porta | ALTO | prova 2 (toda tela e uma ação por POST, sem sessão, vão para a entrada) antes de publicar |
-| L-6 | **Link ou imagem quebrada** com o prefixo (logo, redirecionamento montado à mão) | BAIXO | lista dos caminhos absolutos já levantada (`grep`): 2 logos, 1 redirecionamento no proxy; prova 3 |
-| L-7 | **Deploy fora de ordem**: VoePro repassando antes de o Radar ter o `basePath` → 404 em `/ofertas` | MÉDIO | ordem da tabela acima; o passo 2 só depois da prova 1 no ar |
-| L-8 | **Ações de uma versão antiga** ("Failed to find Server Action" depois de cada deploy do Radar) | BAIXO | é o comportamento normal do Next; recarregar a página resolve. Avisar a equipe |
-| L-9 | **Custo da Vercel** (R16): cada push é um build, o Radar e o VoePro somam | BAIXO | juntar as mudanças do passo 1 num deploy só; nada de pushes de teste em ramo publicado |
-| L-10 | **(passo 4) permissão entre schemas**: o papel `srr_ofertas` passa a ler uma visão do VoePro | MÉDIO | schema de contrato próprio (nunca `crm`), duas colunas (id do Auth, ligado/desligado), sem nome nem e-mail, leitura por SQL direto sem mexer no `datasource`; Guardião revisa; registrada no DIARIO |
+| L-1 | **O gerador do `ofertas` escreve por cima do cliente do `crm`** no VoePro (os dois saem hoje em `src/generated/prisma`) | CRÍTICO | saída `src/generated/ofertas` nos dois repositórios; o script reescreve o `generator` da cópia; o revisor confere o diff do `src/generated/` do VoePro |
+| L-2 | **Migração do `ofertas` pelo VoePro**, com o `postgres` e as migrações do `crm` (um `migrate` com `--schema` da cópia carrega o `prisma.config.ts` do VoePro) | CRÍTICO | `prisma.ofertas.config.ts` com URL vazia e sem migrações; nenhuma URL 5432 do `ofertas` no VoePro; o datasource do VoePro continua `["crm"]` |
+| L-3 | **As telas com poder de dono** sobre o `ofertas` | ALTO | pergunta 6 = B |
+| L-4 | **Tipos com o mesmo nome**: o pacote compilando contra o cliente do `crm` | ALTO | imports só por `@/generated/ofertas`; o script recusa; eslint no VoePro |
+| L-5 | **O VoePro inteiro cai sem a variável nova**, ou os dois clientes se sobrescrevem no `next dev` | ALTO | cliente na primeira consulta, chave própria em `globalThis`, nunca importado pela casca |
+| L-6 | **Tela sem guarda** mostra custo e margem a quem não devia | ALTO | guarda na primeira linha de toda tela e ação; prova 8 com uma conta sem o interruptor; o revisor lista toda ação nova |
+| L-7 | **O motor quebra** com a mudança do passo 1 e se atualiza sozinho | ALTO | prova 1 com o motor no notebook antes do push; o vigia volta sozinho para a versão anterior se a nova cair |
+| L-8 | **Conexões** (R3): uma pool a mais no VoePro, dividindo o pooler com o painel próprio do Radar até o passo 4 | MÉDIO | pool 2 por instância; prova 5 mede por usuário do banco, antes e depois, contra o teto do pooler |
+| L-9 | **Dois Radares** (a cópia editada no VoePro e o original divergindo) (R12) | MÉDIO | o pacote não se edita lá; o script recusa por cima de mudança local; `ORIGEM.md` |
+| L-10 | **O schema copiado fica velho** depois de uma migração do Radar | MÉDIO | migração do Radar só acrescenta; a ordem do item 14 |
+| L-11 | **Deploy do VoePro levando o que não foi revisado** (R14) | MÉDIO | passos 2, 3 e 3b em deploys só com eles |
+| L-12 | **Versões**: o pacote espera o mesmo Prisma 7.10 e o mesmo Next 16.3.8 | MÉDIO | o script confere a versão maior e a menor do `prisma` e do `@prisma/client` |
+| L-13 | **Dois painéis por uma semana**, com regras de acesso diferentes | BAIXO | a controle confere `ofertas.acesso` e os interruptores lado a lado |
 
-## Como provar (no ar, com o Saulo olhando)
+## Como provar
 
-1. `https://ofertas.srrviagens.com.br/` → vai para `/ofertas`; com sessão, a
-   vitrine abre; as cinco abas abrem; a logo aparece.
-2. **Sem sessão** (janela anônima): `/ofertas`, `/ofertas/valores`,
-   `/ofertas/saude`, `/ofertas/buscas`, `/ofertas/pacotes` e um POST de ação
-   → todos vão para a entrada (o mesmo teste da L0, com o prefixo).
-3. `curl -I` nos arquivos: `/ofertas/_next/static/...` 200; `/logo-srr.png`
-   não é mais pedido sem prefixo (aba Rede do navegador).
-4. `srr-ofertas.vercel.app` continua pedindo o login da Vercel.
-5. `https://voepro.srrviagens.com.br/ofertas` sem sessão → `/login` do VoePro
-   com a volta para `/ofertas`.
-6. Entrar no VoePro e clicar no menu: o Radar abre **sem pedir senha**, na
-   mesma aba, com o e-mail certo no cabeçalho.
-7. Deixar a aba parada mais de uma hora (token vencido) e fazer o
-   **primeiro** pedido direto em `voepro…/ofertas/valores`, por GET (abrir a
-   tela) e por POST (salvar uma regra): entra, sem deslogar, e a resposta tem
-   um `Set-Cookie` só (L-2). Depois, navegar entre VoePro e Radar por uma hora.
-8. Dentro de `voepro…/ofertas`: "Buscar agora" e "Conferir agora" entram na
-   fila (`ofertas.busca_agora`, `ofertas.conferencia_pedido`) e o motor
-   atende; em Valores, salvar uma regra. Nenhum erro de origem nos logs.
-9. Uma conta que está no VoePro mas **não** liberada no Radar: vê o recado
-   "não liberada", não a vitrine.
-10. `ofertas.srrviagens.com.br/ofertas/entrar` → login do VoePro.
-11. (passo 4) desligar o interruptor de alguém no VoePro → na próxima tela,
-    essa pessoa perde o Radar.
-12. Entrar no Radar e no MilesPro no mesmo navegador (e o MilesPro no
-    celular); apertar "Sair" no Radar: o MilesPro e o celular **continuam**
-    conectados.
-
-Conferências no banco depois de cada passo: `select count(*) from
-pg_stat_activity` (R3); nenhuma tabela nova em `ofertas` (exceto se o Saulo
-pedir); `ofertas.passada` seguindo (o motor não sentiu nada).
+1. **Passo 1, no computador:** `npm run check`; o painel próprio mostra as
+   mesmas ofertas, preços e parcelas de antes (mesma busca, conferida no
+   banco); **o motor no notebook sobe com o código novo e faz uma passada
+   ok**, com coleta gravada.
+2. `node scripts/exportar-pacote.mjs <pasta>` numa cópia de teste do VoePro:
+   copia, reescreve o `generator`, escreve `ORIGEM.md`; recusa por cima de
+   mudança local, recusa um import proibido de propósito.
+3. (pergunta 6 = B) Com o papel das telas: ler a vitrine e gravar um "Buscar
+   agora" funcionam; `DROP`, `ALTER` e `DELETE` numa tabela de ofertas são
+   recusados.
+4. Passo 2 no computador e depois no ar: o VoePro responde igual; sem
+   `OFERTAS_PGBOUNCER_URL`, o VoePro abre normalmente.
+5. `pg_stat_activity` por usuário do banco, antes e depois do passo 2: o
+   papel das telas aparece com no máximo 2 conexões por instância, dentro do
+   teto do pooler.
+6. `voepro…/ofertas` com o interruptor: as cinco abas abrem na casca do
+   VoePro, com o menu lateral; números iguais aos do painel próprio.
+7. Sem sessão: `voepro…/ofertas/...` vai para o `/login` do VoePro e volta
+   para a tela pedida.
+8. Uma conta **sem** o interruptor: não vê o item no menu; o endereço
+   digitado dá "sem acesso"; uma ação chamada à mão é recusada.
+9. "Buscar agora", "Conferir agora", "Conferi" e salvar em Valores pelo
+   VoePro: os pedidos entram na fila com o id de quem fez, e o motor atende.
+10. (pergunta 5 = B) quem tem só "Radar" vê Valores sem poder salvar.
+11. Passo 4: `ofertas.srrviagens.com.br` leva a `voepro…/ofertas`; o
+    `.vercel.app` do Radar não serve mais o painel.
 
 ## Como desfazer
 
-- **Passos 2a/2b (VoePro):** voltar o menu para o link externo e tirar as
-  duas regras de repasse ("Promote" do deploy anterior na Vercel, sem build).
-  Minutos. O Radar segue em `ofertas.srrviagens.com.br/ofertas`.
-- **Passo 1 (Radar):** "Promote" do deploy anterior na Vercel (sem build) ou
-  reverter o commit do `basePath`. Os endereços antigos sem `/ofertas` voltam.
-- **Passo 4:** o Radar volta a ler `ofertas.acesso` (que não é
-  apagada até a semana de conferência terminar); a visão do VoePro pode
-  ficar, não atrapalha.
-- Nenhum passo apaga dado, então nenhuma volta precisa de backup. Mesmo
-  assim, antes do passo 4, uma cópia do `ofertas.acesso`.
+- **Passos 3 e 3b:** "Promote" do deploy anterior do VoePro (sem build). O
+  painel próprio continua de pé até o passo 4: ninguém fica sem Radar.
+- **Passo 2:** idem, e tirar `OFERTAS_PGBOUNCER_URL` da Vercel do VoePro.
+- **Passo 1b:** `DROP ROLE` do papel das telas (não é dono de nada).
+- **Passo 1:** reverter o commit no `main`; o vigia do motor volta junto.
+- **Passo 4:** religar o painel próprio na Vercel e o DNS. Por isso ele só
+  vem uma semana depois dos passos 3 e 3b.
+- Nenhum passo apaga dado.
 
 ## Regras desta etapa
 
-- **Revisor da fusão antes de cada commit** que toca `next.config.ts`,
-  `proxy.ts`, `src/lib/acesso/**` ou qualquer `process.env` novo (é tudo área
-  sensível do FUSAO, seção 5).
-- **Nada vai ao ar sem o Saulo olhando.** Os pushes são dele.
-- **Esta sessão não escreve no `srr-crm`.** Os passos do VoePro vão escritos
-  para a sessão do VoePro, com o texto exato das regras de repasse.
-- Segredo nunca no chat nem no commit. Esta etapa não pede variável nova
-  (o domínio do VoePro entra no código, não é segredo).
-- Leia `node_modules/next/dist/docs/` (multi-zones, basePath, rewrites,
-  serverActions) antes de escrever.
+- **Esta sessão não escreve no `srr-crm`.**
+- **Revisor da fusão antes de cada commit** que toque `schema.prisma`,
+  qualquer `prisma*.config.ts`, `package.json` (scripts de Prisma),
+  `src/generated/`, `src/lib/acesso*`, `proxy.ts`, `next.config.ts`,
+  `vercel.json`, `scripts/preparar-banco.mjs` ou qualquer `process.env` novo.
+- Nada vai ao ar sem o Saulo olhando; os pushes são dele.
+- Leia `node_modules/next/dist/docs/` e a documentação do Prisma 7
+  (`prisma.config.ts`, `--config`) antes de escrever.
 
 ## Fora do escopo
 
-Motor no computador dedicado e avisos de saúde (L2); juntar os repositórios
-(fase 5 do FUSAO); cookie no domínio pai `.srrviagens.com.br` (fase 2 do
-FUSAO); painel central de usuários (fase 4); a nota (V2), o card (V4) e o
-Telegram (V5).
+Motor na nuvem (L2); juntar os repositórios inteiros (fase 5 do FUSAO);
+cookie no domínio pai (fase 2); painel central de usuários (fase 4); a nota
+(V2), o card (V4) e o Telegram (V5) — quando vierem, nascem como telas do
+VoePro sobre o pacote.
 
 ## Como a revisão vai conferir
 
-- O diff do Radar: só `next.config.ts`, `proxy.ts`, a logo, o cabeçalho,
-  `src/app/entrar/` e, no passo 4, `src/lib/acesso/`. Nenhuma migração.
-- As provas 1–12 refeitas pela sessão de controle no endereço publicado.
-- Revisão do revisor da fusão sobre esta especificação (02/11): **OK com
-  ressalvas**, todas incorporadas acima (pergunta 1 contra o FUSAO, "Sair"
-  global, renovação dupla, repasse só testável na produção, deploys sem
-  carona, migração no build, recado "não liberada", cabeçalhos).
-- O DIARIO com uma linha por deploy, com a hora.
+- Diff do Radar no passo 1: a saída do gerador, `src/pacote/`, os imports
+  trocados (telas e motor), o script. Nenhuma migração.
+- Diffs do VoePro: `prisma.ofertas.config.ts` sem migrações e com URL vazia,
+  o `src/generated/ofertas` separado do `crm`, a guarda em toda tela e ação,
+  a variável nova só em Production, a regra de eslint.
+- As provas 1–11 refeitas; `pg_stat_activity` e `ofertas._prisma_migrations`
+  antes e depois de cada deploy.
+- Revisões do revisor da fusão sobre esta especificação (02/11): a primeira
+  versão e esta, **OK com ressalvas**, todas incorporadas.
