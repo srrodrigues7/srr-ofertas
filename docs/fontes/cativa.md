@@ -295,3 +295,36 @@ revalidador pode trazê-los quando conferir uma oferta.
 - **Resultado (banco de testes, 14/10):** 216 pacotes (211 de BSB, 5
   internacionais de GRU; 20 all inclusive) e 781 bloqueios (628 de BSB, 153
   internacionais de GRU) na vitrine; leitura de ~30 s, 1 requisição.
+
+## C1 — o site mudou de formato (22/10/2026), conector ajustado em 02/11
+
+- **O que mudou lá:** a página (0,5 MB) não traz mais os dados. Ela carrega
+  cinco arquivos do próprio site, `/_s/<código>.js`, e os mesmos blocos
+  (`PACOTES`, `DEST_FIX`, `__PVOO_PAYLOAD`, `PV_SNAPSHOT`) estão neles, com os
+  mesmos campos. O nome do arquivo é a impressão digital do conteúdo (o site
+  serve com `immutable`).
+- **Achado no conserto:** o servidor responde "não mudou" (304) com a página
+  já trocada. O `Last-Modified` ficou parado em 01/11 01:47 GMT enquanto a
+  página de 02/11 trazia arquivos novos. Por isso o conector **não pergunta
+  mais "mudou?"** pela página: baixa os 0,5 MB a cada leitura (de 3 em 3
+  horas) e só baixa um arquivo quando o nome dele muda.
+- **Como lê agora:** procura os blocos na página; se faltarem, nos
+  `<script src="/_s/…">` do próprio site (nunca de outro endereço, no máximo
+  8 arquivos, no máximo 15 MB somados), com o mesmo robô, prazo e contador.
+  Os arquivos ficam na memória e na pasta temporária
+  (`srr-ofertas/cativa-arquivos/`), mas **só depois de uma leitura que achou
+  os blocos**: uma resposta errada nunca vira cache. Se os arquivos guardados
+  não trouxerem os blocos, o conector baixa todos de novo, uma vez. O limite
+  de 15 MB é conferido durante o download (para no meio), a gravação é
+  atômica (arquivo provisório e troca de nome), e os arquivos que a página
+  largou são apagados.
+- **Data de publicação:** a data da versão que o site escreve
+  (`<meta name="vcd-versao">`) ou o `Last-Modified`, a mais nova. Sem isso, o
+  aviso "página não republicada há N dias" acenderia por engano.
+- **Erro mais útil:** diz qual bloco faltou e onde se procurou (a página e
+  quantos arquivos).
+- **Provado (banco de testes, 02/11):** 481 pacotes e 10.821 bloqueios lidos;
+  o formato antigo (blocos dentro da página) e o novo dão o mesmo resultado;
+  `npm run cativa` gravou 236 pacotes e 1.291 bloqueios das nossas saídas
+  (em 16/10 eram 226 e 1.245), 6 requisições na primeira leitura e 1 na
+  seguinte.

@@ -74,6 +74,8 @@ export async function pedirPagina(
     etag?: string | null;
     ultimaMudanca?: string | null;
     agente: string;
+    /** Recusa uma resposta maior que isto, sem baixar o resto (a conta é do corpo já descompactado). */
+    limiteBytes?: number;
   },
 ): Promise<{ corpo: string | null; etag: string | null; ultimaMudanca: string | null }> {
   falhaSimulada(opcoes.fonteId);
@@ -98,10 +100,35 @@ export async function pedirPagina(
     return { corpo: null, etag: etag ?? opcoes.etag ?? null, ultimaMudanca: ultimaMudanca ?? opcoes.ultimaMudanca ?? null };
   }
   if (!resposta.ok) throw new Error(`HTTP ${resposta.status} em ${encurtar(url)}`);
-  return { corpo: await resposta.text(), etag, ultimaMudanca };
+  const corpo = opcoes.limiteBytes == null ? await resposta.text() : await lerAteOLimite(resposta, opcoes.limiteBytes, url);
+  return { corpo, etag, ultimaMudanca };
 }
 
 /** URL sem a parte de parâmetros longa, para mensagens de erro legíveis. */
 export function encurtar(url: string): string {
   return url.length > 140 ? `${url.slice(0, 140)}…` : url;
+}
+
+/** O corpo da resposta, parando assim que passar de `limite` bytes. */
+async function lerAteOLimite(resposta: Response, limite: number, url: string): Promise<string> {
+  const muito = () => new Error(`Resposta maior que ${Math.round(limite / 1024)} KB, recusada: ${encurtar(url)}`);
+  if (Number(resposta.headers.get("content-length") ?? 0) > limite) {
+    await resposta.body?.cancel();
+    throw muito();
+  }
+  if (!resposta.body) return "";
+  const leitor = resposta.body.getReader();
+  const pedacos: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await leitor.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limite) {
+      await leitor.cancel();
+      throw muito();
+    }
+    pedacos.push(value);
+  }
+  return Buffer.concat(pedacos).toString("utf8");
 }

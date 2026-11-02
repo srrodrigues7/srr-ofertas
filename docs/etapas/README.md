@@ -31,7 +31,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | ---- | ----- | ---------- | ------- | ------ |
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aprovada** (só no computador) |
-| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aprovada**; **a vitrine da Cativa está quebrada desde 22/10** (o site mudou de formato): plano de correção C1 no fim deste arquivo, espera o "sim" |
+| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aprovada**; **a vitrine da Cativa quebrou em 22/10** (o site mudou de formato); **C1 construído e provado no banco de testes em 02/11**, espera o push (junto com o passo 1 da L) |
 | V2   | [A nota](V2-a-nota.md) — réguas de preço bom (boa/imperdível), preço normal da rota, preferências de voo, nota 0–100 com o motivo, imperdíveis em destaque | V1b | alto | **aberta, parada**: ramo `claude/mystifying-panini-397794` em `0cf943f`, 24 arquivos sem commit na worktree, sessão offline; 24 commits atrás do `main` (falta trazer a V6, a L0 com o `exigirAcesso` e o empurrão da etiqueta `alerta`). **Vem antes da V4.** Não retomar sem ordem da controle |
 | V3a  | [Investigar Pátria, Azul Viagens e Expedia](V3a-investigar-patria-azul-expedia.md) — só investigação | — | alto | **encerrada** — as três seguradas pelo Saulo |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
@@ -1066,6 +1066,25 @@ para a L2, nada apaga dado e a volta leva minutos).
 o "sim".
 
 #### C1 — A vitrine da Cativa (V1b) quebrada desde 22/10
+
+**Construído em 02/11 (o Saulo liberou: Black November começa em 03/11).**
+Ramo `l/passo-1-pacote`, junto com o passo 1 da L, para sair num push só.
+Feito como o plano abaixo, com uma diferença: **o conector parou de
+perguntar "mudou?" pela página**, porque o site respondeu 304 com a página já
+trocada (o `Last-Modified` ficou parado em 01/11). Baixa a página (0,5 MB) a
+cada leitura; os arquivos `/_s/` só quando o nome muda. A data de publicação
+vem da versão que o site escreve na página. O passo 4 do plano (recortes em
+`scripts/provas/`) ficou como conferência fora do ar, sem arquivo guardado:
+os blocos de hoje, dentro da página ou nos arquivos, dão o mesmo resultado.
+Provas e detalhes em [`docs/fontes/cativa.md`](../fontes/cativa.md) (seção
+C1). No banco de testes: 236 pacotes e 1.291 bloqueios das nossas saídas;
+a vitrine de pacotes mostra 217 pacotes em 41 grupos. **Hoteldo** não está
+fora: nunca entrou (sem chave da API, decisão do Saulo).
+
+*Depois do push, no notebook:* parar o motor, `git pull`, `npm ci`, religar.
+A Cativa é lida em até 30 minutos (a última leitura deu erro, e o motor tenta
+de novo a cada 30 minutos; 6 requisições, ~5,7 MB); depois, 1 requisição de 3 em 3 horas. Na
+Saúde, "Cativa: vitrine lida" e, em Coletas, o resumo com os pacotes.
 
 **Esforço: médio.** Conector existente, formato conhecido; o risco é só a
 Cativa mudar de novo.
