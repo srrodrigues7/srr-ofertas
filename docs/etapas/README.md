@@ -38,7 +38,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V4   | [Aprovação, card e legenda](V4-card-e-aprovacao.md) — aprovar com conferência, código de rastreio, arte e legenda prontas para postar (em paralelo com a V2) | V1b | alto | **aberta** |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
 | V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main). Na produção, 0 ofertas até agora: **não é defeito** (nada novo no grupo desde sexta 30/10; ver C2 no fim deste arquivo). Prova com o grupo de verdade: primeiro dia útil, 03/11 |
-| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída e publicada** (01/11, `ofertas.srrviagens.com.br`; publicação conduzida pelo Guardião da fusão). **Atenção: o "Sair" do Radar desloga de todos os sistemas** (C3, no fim deste arquivo) |
+| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída e publicada** (01/11, `ofertas.srrviagens.com.br`; publicação conduzida pelo Guardião da fusão). "Sair" corrigido para só o Radar (C3, 02/11, no ramo `publicar/c3-e-visual`) |
 | L    | [Radar dentro do VoePro](L-radar-no-voepro.md) — `voepro.srrviagens.com.br/ofertas`, com o login do VoePro (fase 1b do FUSAO) | L0 | alto | **especificação escrita** (02/11); espera as respostas do Saulo e o "sim" do plano |
 | L2   | Ligar o resto — motor num computador dedicado, sempre ligado; avisos de saúde no celular | L0 | alto | esperando (proposta na spec da L, pergunta 4) |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
@@ -1033,7 +1033,7 @@ publicação. O revalidador só trabalha das 7h às 23h.
 A sessão de controle anterior parou de responder; esta a substituiu. Três
 entregas, **nada publicado, nada na produção** (só leituras no banco).
 
-**1. O visual da etapa D (kit da SRR) — ramo `l-visual/kit-srr`, espera o "sim"**
+**1. O visual da etapa D (kit da SRR) — aprovado pelo Saulo em 02/11 ("se for só para minha aprovação, pode seguir"; ele olha no ar, sem prévia nem fotos das telas de dentro)**
 
 - O kit do VoePro foi copiado pelo script dele (`src/kit/`, origem em
   `src/kit/ORIGEM.md`: VoePro `488cafa`, ramo `etapa-D/rodada-4`). **O kit não
@@ -1200,3 +1200,23 @@ com isso. Até lá, aviso à equipe: não usar o "Sair" do Radar, só fechar a a
 cria uma tabela, e o build do Radar roda `migrate deploy` na produção a cada
 deploy: ela vai depois da L, com revisão própria, nunca no mesmo `main` que
 os deploys da L.
+
+#### Publicação de 02/11: o visual e a C3 juntos
+
+- **C3 construída** (`src/app/entrar/acoes.ts`, `scope: "local"` nas duas
+  saídas). Prova com servidor falso: antes `logout?scope=global`, depois
+  `scope=local`, cookie do Radar apagado nos dois. Revisor da fusão: **OK**
+  (não há outro `signOut`; sem migração, env ou rota).
+- **Ramo `publicar/c3-e-visual`**: em cima do `main` publicado (`f77af8a`),
+  em avanço simples: os 3 commits de README da L0, a spec L e os planos
+  (C1–C3), o visual e a C3. `npm run check` passa. Migrações: as mesmas 9 da
+  produção, nada novo para o `migrate deploy` do build aplicar.
+- **Publicar = o Saulo empurra o ramo direto para o `main`** (sem empurrar
+  o ramo com nome próprio, para não gerar um build de prévia a mais):
+  `git push origin publicar/c3-e-visual:main`, na pasta `srr-ofertas`. A
+  Vercel publica sozinha.
+- **Provas depois do deploy** (o Saulo, no domínio): (1) as telas abrem na
+  letra e nas cores novas, com a lua e a paleta no cabeçalho; (2) entrar no
+  Radar e no MilesPro no mesmo navegador, apertar "Sair" no Radar, e o
+  MilesPro (e o VoePro) continuam conectados. A controle confere o log do
+  build (nenhuma migração aplicada) e `ofertas._prisma_migrations` = 9.
