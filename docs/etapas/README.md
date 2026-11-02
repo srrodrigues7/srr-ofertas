@@ -31,15 +31,16 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | ---- | ----- | ---------- | ------- | ------ |
 | O0   | [Fundação](O0-fundacao.md) — projeto, banco, motor e tela de Saúde, **rodando local** | — | alto | **aprovada** (a parte de publicar ficou para a L) |
 | V1a  | [Vitrine: passagens](V1a-vitrine-passagens.md) — Smiles e Melhores Destinos buscando, passagens reais de BSB na tela, com custo, venda e parcelas; o molde de oferta | O0 | alto | **aprovada** (só no computador) |
-| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aprovada** (Cativa no ar; o revalidador espera o usuário do robô) |
+| V1b  | [Vitrine: pacotes](V1b-vitrine-pacotes.md) — Cativa e Hoteldo: investiga em paralelo à V1a, depois pluga os pacotes no molde dela | O0 (investigar), V1a (plugar) | alto | **aprovada**; **a vitrine da Cativa está quebrada desde 22/10** (o site mudou de formato): plano de correção C1 no fim deste arquivo, espera o "sim" |
 | V2   | [A nota](V2-a-nota.md) — réguas de preço bom (boa/imperdível), preço normal da rota, preferências de voo, nota 0–100 com o motivo, imperdíveis em destaque | V1b | alto | **aberta** |
 | V3a  | [Investigar Pátria, Azul Viagens e Expedia](V3a-investigar-patria-azul-expedia.md) — só investigação | — | alto | **encerrada** — as três seguradas pelo Saulo |
 | V3.x | Uma fonte por vez, da lista do Saulo — investigar, plugar e ver na tela | V1 | médio (alto se a fonte for difícil) | esperando |
 | V4   | [Aprovação, card e legenda](V4-card-e-aprovacao.md) — aprovar com conferência, código de rastreio, arte e legenda prontas para postar (em paralelo com a V2) | V1b | alto | **aberta** |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
-| V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main; prova com o grupo de verdade pendente: monitor parado) |
-| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída e publicada** (01/11, `ofertas.srrviagens.com.br`; publicação conduzida pelo Guardião da fusão) |
-| L    | Ligar tudo — o resto: o Radar dentro do VoePro (`/ofertas`, acesso pelo cadastro do VoePro), GitHub, motor no computador dedicado, alertas de saúde | L0 | xalto | esperando |
+| V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main). Na produção, 0 ofertas até agora: **não é defeito** (nada novo no grupo desde sexta 30/10; ver C2 no fim deste arquivo). Prova com o grupo de verdade: primeiro dia útil, 03/11 |
+| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída e publicada** (01/11, `ofertas.srrviagens.com.br`; publicação conduzida pelo Guardião da fusão). **Atenção: o "Sair" do Radar desloga de todos os sistemas** (C3, no fim deste arquivo) |
+| L    | [Radar dentro do VoePro](L-radar-no-voepro.md) — `voepro.srrviagens.com.br/ofertas`, com o login do VoePro (fase 1b do FUSAO) | L0 | alto | **especificação escrita** (02/11); espera as respostas do Saulo e o "sim" do plano |
+| L2   | Ligar o resto — motor num computador dedicado, sempre ligado; avisos de saúde no celular | L0 | alto | esperando (proposta na spec da L, pergunta 4) |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
 
 **Os níveis de esforço** (o mesmo critério do VoePro):
@@ -1024,3 +1025,178 @@ publicação. O revalidador só trabalha das 7h às 23h.
   (`ofertas.srrviagens.com.br/ofertas` funcionando), depois o rewrite e o menu
   no VoePro. A etapa é aberta pela sessão de controle com o Saulo; o Guardião
   revisa o diff (basePath, allowedOrigins, proxy) antes do deploy.
+
+---
+
+### Controle do Radar — 02/11/2026 (nova sessão de controle)
+
+A sessão de controle anterior parou de responder; esta a substituiu. Três
+entregas, **nada publicado, nada na produção** (só leituras no banco).
+
+**1. O visual da etapa D (kit da SRR) — ramo `l-visual/kit-srr`, espera o "sim"**
+
+- O kit do VoePro foi copiado pelo script dele (`src/kit/`, origem em
+  `src/kit/ORIGEM.md`: VoePro `488cafa`, ramo `etapa-D/rodada-4`). **O kit não
+  se edita aqui**: muda no VoePro e copia de novo.
+- Layout raiz sem `next/font/google` (Plus Jakarta Sans servida pelo projeto;
+  o build não depende do Google, que derrubou um build do VoePro em 02/11);
+  tema e cor pelos cookies `srr_tema`/`srr_cor`; sem escolha, claro e verde,
+  mesmo com o Windows no escuro. Lua e paleta no cabeçalho. Texto sobre a cor
+  usa `--sobre-acento`; cantos do kit. `npm run check` passa.
+- Fotos antes/depois em `docs/etapas/fotos/l-visual/` (no ramo do visual),
+  **só da tela de entrada**: as telas de dentro pedem login, que não funciona
+  no computador (o captcha só aceita o endereço publicado e o `.env` local não
+  tem as chaves do porteiro). Um desvio temporário de login, só para as fotos,
+  foi barrado pela permissão da sessão e **não foi contornado**. Decisão do
+  Saulo pendente: liberar esse desvio local (nunca commitado), ver numa prévia
+  publicada depois do "sim", ou olhar ele mesmo.
+- O ramo do visual saiu do `main` (`f77af8a`); este README está no ramo
+  `l/spec-e-correcoes`, que saiu do `l0/painel-no-ar` (3 commits de README à
+  frente do `main`). Os dois juntam sem conflito (arquivos diferentes).
+
+**2. A especificação da etapa L** — [L-radar-no-voepro.md](L-radar-no-voepro.md).
+Radar em `voepro.srrviagens.com.br/ofertas` pelo desenho "multi-zones" do
+Next (basePath aqui, rewrite no VoePro). Quatro perguntas ao Saulo (quem
+entra, como aparece, o domínio antigo, separar a L2). Revisada pelo revisor
+da fusão: OK com ressalvas, todas incorporadas. Esforço proposto:
+**alto** (era xalto para o pacote inteiro; sem o motor e os avisos, que vão
+para a L2, nada apaga dado e a volta leva minutos).
+
+**3. As correções registradas (C1, C2) e uma achada na revisão (C3)** — diagnóstico feito, construção espera
+o "sim".
+
+#### C1 — A vitrine da Cativa (V1b) quebrada desde 22/10
+
+**Esforço: médio.** Conector existente, formato conhecido; o risco é só a
+Cativa mudar de novo.
+
+*O que se vê:* toda leitura da Cativa termina em "Não achei os pacotes na
+página da Cativa — o site mudou de formato?". No banco de testes, a primeira
+falha é de **22/10 à noite**; na produção, todas as 20 leituras desde que o
+motor chegou lá (02/11, 02:47Z) falharam. Resultado: **nenhum pacote e nenhum
+bloqueio da Cativa na vitrine publicada**, e o botão "Conferir agora" não tem
+oferta onde aparecer.
+
+*A causa (conferida em 02/11 na página de verdade):* o viajandocomdesconto
+**tirou os dados de dentro da página**. Antes, o HTML trazia os blocos
+`const PACOTES = [...]`, `window.__PVOO_PAYLOAD = {...}`, `PV_SNAPSHOT` e
+`DEST_FIX`. Agora a página (0,5 MB) só traz o esqueleto e carrega cinco
+arquivos do próprio site, `/_s/<código>.js`, e os blocos estão lá:
+
+| arquivo | tamanho | o que tem |
+|---|---|---|
+| `/_s/…?n=3` | 3,3 MB | `PACOTES` (481 pacotes, 1.769 saídas, 107 de BSB) e `DEST_FIX` |
+| `/_s/…?n=1` | 0,8 MB | `__PVOO_PAYLOAD` (10.822 bloqueios, gerado em 02/11) |
+| `/_s/…?n=0` | 1,3 MB | `PV_SNAPSHOT` (criança grátis por hotel) |
+
+**Os campos são os mesmos** (pacote, saída, hotel; bloqueios com `blob`,
+`mapa`, `ger` e três campos novos de dólar que não usamos). O site responde
+normalmente ao nosso robô (identificado como "SRRViagens-RadarOfertas"), sem
+anti-robô; está atrás da Cloudflare, mas sem desafio. O conector
+(`src/lib/coleta/fontes/cativa.ts`) só procura dentro do HTML, então não acha.
+
+*O plano (nada construído):*
+
+1. `lerVitrineCativa`: depois de baixar a página, achar os
+   `<script src="/_s/…">` **do próprio site** (nunca de outro endereço; no
+   máximo 8; no máximo 15 MB somados), baixar cada um com o mesmo robô, prazo
+   e contador de requisições, e procurar os mesmos marcadores na soma página +
+   arquivos. Se um dia os dados voltarem para dentro da página, continua
+   funcionando (procura na página primeiro).
+2. **Cache por nome de arquivo:** o nome `/_s/<código>.js` muda quando o
+   conteúdo muda. Arquivo com o mesmo nome não se baixa de novo; a pergunta
+   "mudou?" da página (`Last-Modified`) continua. Na prática: uma leitura
+   grande por dia (o site republica de manhã), o resto são perguntas de
+   poucos bytes.
+3. Mensagem de erro mais útil: dizer **qual** bloco faltou e **onde** se
+   procurou (página e quantos arquivos), para a próxima mudança da Cativa
+   ser diagnosticada pela tela de Saúde.
+4. Teste com recortes da página e dos arquivos de hoje (guardados em
+   `scripts/provas/`, só alguns pacotes, sem os 5 MB): os dois formatos, o
+   antigo e o novo, dão o mesmo resultado.
+5. Provas: `npm run cativa` (conta pacotes e bloqueios, BSB e GRU
+   internacional); uma passada do motor com "Cativa: vitrine lida"; no banco,
+   `ofertas.oferta` com `fonte_id = 'cativa'` ativas (pacotes e passagens);
+   o Saulo confere três pacotes contra o site. **No banco de testes primeiro.**
+   Na produção só com o "sim" dele, porque o motor do notebook já escreve lá.
+6. Fora deste conserto (anotado): depois de erro, o motor tenta de novo a
+   cada 30 minutos (regra geral do `nucleo.ts`, de propósito); com a página
+   sem mudança cada tentativa é uma pergunta pequena, então fica como está.
+
+*Sem pergunta de negócio:* a escolha é técnica e não muda nada que o Saulo
+veja além de os pacotes voltarem.
+
+#### C2 — Alertas do WhatsApp (V6): 0 ofertas na produção
+
+**Esforço: baixo.** Não há defeito no Radar; há uma prova pendente e um
+ajuste pequeno no alarme.
+
+*O que se vê:* desde que o motor chegou à produção (02/11, 02:45Z), nenhum
+alerta virou oferta. A dúvida vinha da noite de 01/11 ("olhar amanhã").
+
+*O que o banco e os arquivos mostram (02/11, ~09:40):*
+
+- **A ponte está viva**: leu o arquivo do monitor às 09:38, a cada minuto,
+  sem erro. O monitor de WhatsApp está ligado (processo de 01/11, 07:50),
+  conectado, os dois grupos "monitorando", histórico completo.
+- **O grupo não postou nada desde sexta, 30/10, 17:05** (última mensagem no
+  arquivo do monitor). Depois veio o fim de semana e hoje é feriado
+  (Finados). O grupo posta em dia útil, das 9h às 20h; o monitor diz "1 lida,
+  0 novas" a cada sincronização, o que bate com silêncio, não com perda.
+- **Todas as 449 mensagens foram entendidas** (0 "não entendido"): 192 fora
+  de origem, 130 fora de programa, 121 vencidas, 3 fora de classe, 3 sem
+  datas. As que passariam nos filtros já tinham mais de 24 h (a validade)
+  quando o motor chegou à produção, então viraram "vencido". No banco de
+  testes, as mesmas regras transformaram 9 alertas frescos em 26 ofertas.
+- Os milheiros de Azul Fidelidade, Azul Pelo Mundo e LATAM Pass já estão
+  preenchidos na produção (02/11, ~02:42), então as ofertas desses programas
+  sairão com preço.
+
+*O plano:*
+
+1. **Prova no primeiro dia útil (03/11, ~11h):** conferir no banco
+   `ofertas.alerta_mensagem` com `resultado = 'oferta'` e `ofertas.oferta`
+   ativas com `fonte_id = 'alerta_cpm'`. Se, com dois ou mais alertas novos de
+   BSB (ou GRU/GIG internacional) em Smiles/Azul/LATAM, nada virar oferta, aí
+   sim reabrir o diagnóstico com o motivo gravado em cada mensagem.
+2. **O alarme de silêncio não conhece feriado:** a Saúde trata como "dia útil"
+   tudo que não é sábado nem domingo (`src/lib/alertas/saude.ts`), então hoje
+   vai acusar "silêncio no horário do grupo" sem motivo. Pergunta ao Saulo:
+   - **A)** uma lista de feriados em Valores (nacionais e do DF já
+     preenchidos; ele acrescenta os outros). Ganha: alarme confiável. Custa:
+     uma tabela pequena e uma tela.
+   - **B)** deixar como está: em feriado, a Saúde mostra o aviso amarelo e a
+     equipe ignora. Custa: aviso falso uns 10 dias por ano.
+   - **Recomendação: A**, depois da L (cria migração; ver C3), e é pouco
+     e evita que a equipe aprenda a ignorar o alarme.
+3. **Fora do Radar, para o Saulo saber:** o monitor de WhatsApp parou sozinho
+   em 29/10 às 21:07 (o próprio diagnóstico dele aponta a suspensão do
+   Windows) e só voltou quando foi reaberto à mão. Reabrir sozinho ao acordar
+   o computador é uma pergunta que o monitor já fez ao Saulo e está sem
+   resposta. O Radar não mexe no monitor (decisão de 30/10); a Saúde do Radar
+   avisa quando ele para.
+
+#### C3 — O "Sair" do Radar desloga a pessoa de todos os sistemas (achado em 02/11)
+
+**Esforço: baixo. Gravidade: alta. Já vale no Radar publicado.**
+
+*Achado pelo revisor da fusão ao revisar a spec da L, conferido no código:*
+`src/app/entrar/acoes.ts` chama `supabase.auth.signOut()` sem escopo (linhas
+34 e 43). Na biblioteca do Supabase usada aqui, o padrão é o escopo
+**global**: encerra **todas** as sessões da conta. Como a conta é a mesma do
+MilesPro e do VoePro, quem aperta "Sair" no Radar (ou "Sair e tentar com
+outra conta" na tela de não liberada) é deslogado do MilesPro e do VoePro,
+em todos os computadores e celulares. O VoePro já usa `scope: "local"`.
+
+*O plano:* trocar as duas chamadas para `signOut({ scope: "local" })` (só a
+sessão deste navegador). Mudança de auth: passa pelo revisor da fusão antes
+do commit e vai ao ar com o "sim" do Saulo. Prova no endereço publicado:
+entrar no Radar e no MilesPro no mesmo navegador e no MilesPro pelo celular,
+apertar "Sair" no Radar, e o MilesPro continua conectado nos dois.
+**Recomendação: fazer antes de qualquer outra coisa da L**, num deploy só
+com isso. Até lá, aviso à equipe: não usar o "Sair" do Radar, só fechar a aba.
+
+*Ordem com as outras correções:* C3 primeiro (sem migração). A C2-A (feriados)
+cria uma tabela, e o build do Radar roda `migrate deploy` na produção a cada
+deploy: ela vai depois da L, com revisão própria, nunca no mesmo `main` que
+os deploys da L.
