@@ -981,9 +981,21 @@ filtrados: fora de origem, vencidos, fora de programa). A Cativa dá
 "o site mudou de formato?" — já dava no teste desde 23/10; não é da
 publicação. O revalidador só trabalha das 7h às 23h.
 
-**Não testado na L0:** "Buscar agora" e "Conferir agora" pela internet (o
-motor já atende, mas ninguém pediu pelo domínio ainda); a mensagem de conta
-não liberada com uma conta real de outra pessoa.
+**Não testado na L0 (tentado em 02/11, ~03:00Z):**
+
+- *"Buscar agora" pelo domínio:* precisa de alguém com sessão no Radar. O
+  Chrome usado pela sessão de construção não tinha sessão, e ela não digita
+  senha. Gravar o pedido direto na fila da produção foi barrado pela
+  permissão da sessão. Para o Saulo: entrar em
+  `https://ofertas.srrviagens.com.br/buscas`, apertar "Buscar agora" em
+  qualquer busca ligada e, em até uns 2 minutos, ver a coluna "Último
+  “Buscar agora”" mudar de "na fila" para feito. Quem conferir no banco olha
+  `ofertas.busca_agora` (status e resumo).
+- *"Conferir agora":* não há como testar ainda. O botão só aparece em
+  ofertas da Cativa (coleta quebrada desde 23/10) e dos alertas do WhatsApp
+  (nenhum virou oferta na produção até agora). Testar quando a primeira
+  oferta de uma dessas fontes aparecer.
+- A mensagem de conta não liberada com a conta real de outra pessoa.
 
 **O que a etapa do `/ofertas` precisa** (o Radar em
 `voepro.srrviagens.com.br/ofertas`, uma sessão só para isso):
