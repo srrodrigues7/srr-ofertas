@@ -1220,3 +1220,11 @@ os deploys da L.
   Radar e no MilesPro no mesmo navegador, apertar "Sair" no Radar, e o
   MilesPro (e o VoePro) continuam conectados. A controle confere o log do
   build (nenhuma migração aplicada) e `ofertas._prisma_migrations` = 9.
+- **No ar em 02/11, ~10:30** (push do Saulo, `main` = `4924676`, deploy
+  `dpl_CUkz2K8x…` READY em 26 s, `gru1`, em `ofertas.srrviagens.com.br`).
+  Conferido pela controle: build sem migração aplicada
+  (`ofertas._prisma_migrations` = 9, a última de 31/10, nenhuma com
+  problema); `/entrar` publicado com `data-theme="claro"` e
+  `data-accent="srr"`, sem fonte do Google; `/valores` sem sessão → 303 para
+  `/entrar`. **Falta a prova do Saulo no domínio**: visual nas telas de
+  dentro, e "Sair" do Radar sem derrubar o MilesPro.
