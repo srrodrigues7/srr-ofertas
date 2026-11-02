@@ -38,7 +38,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V4   | [Aprovação, card e legenda](V4-card-e-aprovacao.md) — aprovar com conferência, código de rastreio, arte e legenda prontas para postar (em paralelo com a V2) | V1b | alto | **aberta** |
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
 | V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main; prova com o grupo de verdade pendente: monitor parado) |
-| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída** (31/10, ramo `l0/painel-no-ar`; publicação conduzida pelo Guardião da fusão) |
+| L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída e publicada** (01/11, `ofertas.srrviagens.com.br`; publicação conduzida pelo Guardião da fusão) |
 | L    | Ligar tudo — o resto: o Radar dentro do VoePro (`/ofertas`, acesso pelo cadastro do VoePro), GitHub, motor no computador dedicado, alertas de saúde | L0 | xalto | esperando |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
 
@@ -945,28 +945,68 @@ ganhou as três `NEXT_PUBLIC_*` (documentadas no `.env.example`).
 - Backup: o automático do MilesPro está quebrado desde 08/10 (R17); antes
   desta publicação o Saulo baixou um completo (~00:10 de 31/10).
 
-**Publicação — onde parou (31/10/2026, madrugada; o Saulo encerrou o dia)**
+**Publicação — concluída (01/11/2026)**
 
 O caminho foi o do VoePro (GitHub + importação na Vercel), conduzido pelo
 Guardião da fusão, em vez da CLI prevista na especificação.
 
 | item | estado |
 |---|---|
-| Repositório | `srrodrigues7/srr-ofertas` (privado); `main` = `44611d2` (o ramo `l0/painel-no-ar` empurrado como `main`) |
-| Projeto Vercel | `srr-ofertas`; deploy de Production `dpl_EZ6DHfX6wMXTAVW8Hhoyz9r1Gz7B` **READY** |
-| Banco | produção: as 9 migrações do Radar aplicadas no build; `ofertas` com 24 tabelas; `ofertas.acesso` com 1 (Saulo) |
-| Endereço hoje | só `srr-ofertas.vercel.app`, atrás da Vercel Authentication (login da Vercel antes do nosso) |
-| Proteção conferida no publicado | `/valores` sem sessão → `/entrar` com formulário e captcha |
-| Domínio `ofertas.srrviagens.com.br` | **falta**: CNAME `18385c081092182e.vercel-dns-016.com` no Registro.br (Guardião) e o domínio no projeto (Saulo) |
-| Redirect URL `https://ofertas.srrviagens.com.br/**` no Auth | **falta** (Saulo) |
-| Hostname no widget do Turnstile | **falta** (Saulo) |
-| Funções em São Paulo (`gru1`) | commit `31daddd` no ramo, aprovado pelo Guardião; **falta** o push para o `main` do GitHub |
-| Teste de login com a senha do Saulo | **falta** (depende dos três itens acima) |
-| Motor apontando para a produção | **falta**: a linha `DATABASE_URL` do `.env` dele vira a de produção, e o motor reinicia |
+| Repositório | `srrodrigues7/srr-ofertas` (privado); `main` = `f77af8a` (igual ao ramo `l0/painel-no-ar`) |
+| Endereço | **https://ofertas.srrviagens.com.br** (CNAME no Registro.br, domínio verificado no projeto `srr-ofertas`) |
+| Deploy de Production | `dpl_Gx5Jxtcj…` **READY**, funções em São Paulo (`gru1`) |
+| `srr-ofertas.vercel.app` | segue atrás da Vercel Authentication (login da Vercel antes do nosso) |
+| Auth de produção | Redirect URL `https://ofertas.srrviagens.com.br/**`; Site URL intocada |
+| Turnstile | hostname `ofertas.srrviagens.com.br` no widget (o captcha só carregou depois disso) |
+| Proteção | sem sessão, `/valores` (e toda rota, e as ações por POST) vão para `/entrar` |
+| Login do Saulo pelo domínio | **ok** (01/11, manhã) |
+| Banco | produção: 9 migrações do Radar; sementes iguais às do teste (abaixo) |
+| Motor | no notebook do Saulo (`srrlaptop`), `.env` apontando para a produção; a conexão antiga ficou em `.env.testes` |
 
-Até o motor trocar de banco, a vitrine publicada fica vazia: as ofertas de
-hoje estão no banco de testes, onde o motor ainda colhe.
+**Sementes da produção conferidas antes do motor (01/11):** `configuracao`
+tem as 43 chaves do catálogo do código (`src/lib/configuracao.ts`) — o teste
+tem 64 porque guarda as 21 chaves da nota (`nota.*`, `grupo.limite_dia`) das
+migrações da V2, que não estão neste `main` e que nenhum código publicado lê;
+quando a V2 entrar, o `migrate deploy` do build as semeia. `lugar` tem 167
+(68 + 99 das migrações); o resto o motor grava sozinho ao coletar.
+`busca` 27, `margem` 4, `parcela_taxa` 1, `alerta_origem` 3,
+`alerta_programa` 27, `fonte` 4, `programa` 5, `faixa_busca` 3: iguais ao
+teste.
 
-**Atenção para quem juntar ao `main` local:** o `main` do GitHub já tem a L0
-(`44611d2`); o `main` local deste computador ainda está em `84373ea`. Juntar
-`l0/painel-no-ar` ao `main` local deixa os dois iguais (avanço simples).
+**Primeira passada na produção (02/11, 02:45Z):** passada 1 `ok` em 115 s;
+9 de 327 tarefas (as outras 318 entram nas passadas seguintes, normal num
+banco vazio); 150 ofertas, 653 preços, lugares de 167 para 264. A ponte leu
+449 mensagens do grupo; 200 alertas lidos, nenhum virou oferta (todos
+filtrados: fora de origem, vencidos, fora de programa). A Cativa dá
+"o site mudou de formato?" — já dava no teste desde 23/10; não é da
+publicação. O revalidador só trabalha das 7h às 23h.
+
+**Não testado na L0:** "Buscar agora" e "Conferir agora" pela internet (o
+motor já atende, mas ninguém pediu pelo domínio ainda); a mensagem de conta
+não liberada com uma conta real de outra pessoa.
+
+**O que a etapa do `/ofertas` precisa** (o Radar em
+`voepro.srrviagens.com.br/ofertas`, uma sessão só para isso):
+
+- *Neste repositório:* `basePath: "/ofertas"` no `next.config.ts`;
+  `experimental.serverActions.allowedOrigins: ["voepro.srrviagens.com.br"]`
+  (as ações chegam com Origin do VoePro); no `proxy.ts`, montar o
+  redirecionamento com `pedido.nextUrl.clone()` (o `new URL("/entrar", …)` de
+  hoje perde o basePath); a logo (`<img src="/logo-srr.png">`) e o matcher
+  do proxy conferidos com o prefixo; um redirecionamento de `/` para
+  `/ofertas` (com `basePath: false`) para o domínio próprio não dar 404.
+- *No VoePro (pela sessão do VoePro):* rewrite de `/ofertas` e
+  `/ofertas/:path*` para `https://ofertas.srrviagens.com.br/ofertas/…` — nunca
+  para o `.vercel.app`, que está atrás do login da Vercel; o proxy do VoePro
+  deixar `/ofertas` passar; o item de menu como `<a>`, não `<Link>` (troca de
+  aplicação é navegação completa).
+- *A conferir antes de prometer o login único:* que o VoePro guarda a sessão
+  do Supabase em cookie (`@supabase/ssr`, projeto de produção, caminho `/`).
+  Aí o cookie `sb-unhzbeevczoxgwyfxxnv-auth-token` é o mesmo para os dois, e
+  quem entrou no VoePro já entra no Radar. O `/entrar` do Radar passa a
+  mandar para o login do VoePro com a volta para `/ofertas`.
+- *Quem entra:* a lista `ofertas.acesso` continua (só e-mails liberados, sem
+  dados de pessoa) até o painel central `app.srrviagens.com.br`.
+- Esforço estimado: médio. Primeiro o Radar com basePath publicado
+  (`ofertas.srrviagens.com.br/ofertas` funcionando), depois o rewrite e o menu
+  no VoePro.
