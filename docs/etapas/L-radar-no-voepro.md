@@ -98,18 +98,22 @@ dentro de uma tela.
    `@/generated/ofertas/client`. É o mesmo caminho nos dois repositórios e
    não colide com o cliente do `crm` do VoePro (que mora em
    `src/generated/prisma` e é commitado lá). **Isto mexe no motor** (ele
-   importa o cliente), e o motor se atualiza sozinho do `main` (o vigia roda
-   `npm ci` e o `postinstall` gera o cliente): a prova 1 inclui o motor.
+   importa o cliente). O motor de produção **não** se atualiza sozinho hoje:
+   roda no notebook à mão (`npm.cmd run motor`, versão `f77af8a-local`), não
+   pelo vigia. Então: a prova 1 roda o motor com o código novo **antes** do
+   push; depois do push, o Saulo atualiza o notebook com o Guardião
+   (`git pull` e `npm ci`, que gera o cliente novo) e religa o motor.
 2. **O pacote** (`src/pacote/`): o que as telas usam, sem Next, sem login,
    sem tela. Regras do pacote:
    - importa só de dentro dele e de `@/generated/ofertas/client`; nunca
      `@/lib/*` nem `@/generated/prisma`;
    - **recebe o cliente do banco de quem o usa** (não abre conexão sozinho);
-   - as funções que gravam recebem "quem fez" como parâmetro: o **id da conta
-     do Auth** (`authUserId`), e o e-mail só como texto de apoio (no VoePro o
-     e-mail da pessoa pode estar vazio).
-   O motor continua usando `configuracao.ts`, `preco.ts`, `alertas/regras.ts`
-   e as saúdes; elas passam a morar no pacote e o motor importa de lá.
+   - as funções que gravam recebem "quem fez" como parâmetro. Hoje só o
+     "Conferi" grava quem foi, como texto (o nome); continua assim, sem
+     coluna nova. No VoePro, o nome vem da pessoa conectada.
+   O motor passa a importar do pacote o que mudou de lugar (configuração,
+   erros, datas, companhias, `FONTE_ALERTA`, `registrarConferencia`); o
+   leitor e as regras dos alertas ficam no motor (tabela do plano, abaixo).
 3. **As telas do próprio Radar** (`ofertas.srrviagens.com.br`) passam a usar o
    pacote: ele é provado aqui antes de ir para o VoePro.
 4. **O script `scripts/exportar-pacote.mjs`**, irmão do `exportar-kit.mjs`:
@@ -119,8 +123,11 @@ dentro de uma tela.
      a partir da pasta da cópia);
    - escreve `ORIGEM.md` com o commit;
    - **recusa**: se a cópia de lá tiver mudança não commitada; se algum
-     arquivo do pacote importar `@/lib/` ou `@/generated/prisma`; se o
-     `prisma`/`@prisma/client` do VoePro não for o mesmo 7.10;
+     arquivo do pacote importar `@/lib/` ou `@/generated/prisma`; se a versão
+     **instalada** (a do `package-lock.json`, não a faixa do `package.json`)
+     do `prisma`, `@prisma/client` e `@prisma/adapter-pg` no VoePro não for a
+     mesma do Radar (hoje 7.10.0 nos dois; o VoePro usa a faixa `^7.10.0`, e
+     o passo 2 a crava em `7.10.0`);
    - não commita, não toca banco nem rede.
 5. Nenhuma migração, nenhuma tabela nova neste passo.
 
@@ -230,9 +237,13 @@ Quatro travas, uma atrás da outra:
    A barreira de verdade é tirar essa herança: depois da 1b, o Guardião avalia
    `INHERIT FALSE` na filiação (o `postgres` só administra o `ofertas` com
    `SET ROLE`, de propósito) ou o usuário próprio do VoePro (`srr_voepro`,
-   em aberto no FUSAO). O comentário de `preparar-banco.mjs` (linhas 83–84,
-   "é por ele que o VoePro vai ler as ofertas") fica superado e é corrigido
-   no passo 1b.
+   em aberto no FUSAO). O Guardião concordou (02/11): primeiro no banco de
+   testes, com DIARIO, e antes ele lista quem lê o `ofertas` como `postgres`
+   (painel do Supabase, MCP, scripts) para não quebrar ninguém. Não bloqueia
+   a L. Conferido por ele no banco: hoje a filiação é `INHERIT TRUE`, com um
+   segundo `GRANT` com `ADMIN`. O comentário de `preparar-banco.mjs` (linhas
+   83–84, "é por ele que o VoePro vai ler as ofertas") fica superado e é
+   corrigido no passo 1b.
 
 **Migração do `ofertas` continua tendo um caminho só:** o `srr-ofertas`, com
 o papel `srr_ofertas` (dono). `ofertas._prisma_migrations` só recebe linha
@@ -251,7 +262,9 @@ dele.
   - **os deploys antigos guardam a chave dona** e continuariam abertos pelos
     endereços `.vercel.app`: são apagados (ou ficam todos atrás da proteção
     da Vercel), e **a senha do `srr_ofertas` é trocada** (o `.env` do
-    notebook do motor ganha a nova, pelo Saulo);
+    notebook do motor ganha a nova, pelo Saulo; os arquivos locais
+    `.env.vercel-producao` e `.env.testes` da pasta do `srr-ofertas`, fora do
+    git, com a URL antiga, são apagados ou atualizados);
   - o redirecionamento (redirecionar não se faz pelo DNS, que não sabe de
     caminho), escolha na hora do passo 4, com o Guardião: **A)** o projeto
     `srr-ofertas` fica mínimo, só com `redirects` no `vercel.json` (307
@@ -367,7 +380,16 @@ administrador é mesmo membro do `srr_ofertas`; depois de rodar: conferir em
 pedir "Buscar agora" e salvar uma margem funcionam; `DROP TABLE`,
 `ALTER TABLE`, `TRUNCATE`, `DELETE FROM ofertas.oferta` e `CREATE TABLE` no
 `ofertas` são **recusados**; o papel não aparece como dono de nada
-(`pg_tables`, `pg_namespace`).
+(`pg_tables`, `pg_namespace`). **As gravações são feitas pelo Prisma do
+pacote**, não só por SQL à mão: o Prisma escreve colunas por conta própria
+(as de `@updatedAt` e afins), e os `GRANT` por coluna de `oferta` e
+`alerta_mensagem` têm de incluí-las, senão a tela falha só na hora de
+gravar.
+
+Para depois (Guardião, 02/11): se a herança do `postgres` sobre o
+`srr_ofertas` for tirada, o `ALTER DEFAULT PRIVILEGES FOR ROLE srr_ofertas`
+passa a exigir `SET ROLE srr_ofertas` antes. Isso vai escrito no
+`preparar-banco.mjs`.
 
 ## Os passos (cada um com o "sim" do Saulo e em deploy próprio)
 
@@ -405,12 +427,12 @@ pergunta 6 = B, o papel novo nasce primeiro lá).
 | L-4 | **Tipos com o mesmo nome**: o pacote compilando contra o cliente do `crm` | ALTO | imports só por `@/generated/ofertas`; o script recusa; eslint no VoePro |
 | L-5 | **O VoePro inteiro cai sem a variável nova**, ou os dois clientes se sobrescrevem no `next dev` | ALTO | cliente na primeira consulta, chave própria em `globalThis`, nunca importado pela casca |
 | L-6 | **Tela sem guarda** mostra custo e margem a quem não devia | ALTO | guarda na primeira linha de toda tela e ação; prova 8 com uma conta sem o interruptor; o revisor lista toda ação nova |
-| L-7 | **O motor quebra** com a mudança do passo 1 e se atualiza sozinho | ALTO | prova 1 com o motor no notebook antes do push; o vigia volta sozinho para a versão anterior se a nova cair |
-| L-8 | **Conexões** (R3): uma pool a mais no VoePro, dividindo o pooler com o painel próprio do Radar até o passo 4 | MÉDIO | pool 2 por instância; prova 5 mede por usuário do banco, antes e depois, contra o teto do pooler |
+| L-7 | **O motor quebra** com a mudança do passo 1 | ALTO | prova 1 com o motor no notebook antes do push; depois do push, o Saulo atualiza o notebook com o Guardião; se quebrar, volta ao `f77af8a` no notebook |
+| L-8 | **Conexões** (R3): o pooler dá a cada usuário de banco a sua própria pool contra o Postgres; com o papel novo são três usuários pelo pooler | MÉDIO | antes do passo 2, conferir o "pool size" do pooler no Supabase (três usuários vezes a pool tem de caber no teto de 60); pool 2 por instância no VoePro; prova 5 por usuário do banco, antes e depois |
 | L-9 | **Dois Radares** (a cópia editada no VoePro e o original divergindo) (R12) | MÉDIO | o pacote não se edita lá; o script recusa por cima de mudança local; `ORIGEM.md` |
 | L-10 | **O schema copiado fica velho** depois de uma migração do Radar | MÉDIO | migração do Radar só acrescenta; a ordem do item 14 |
 | L-11 | **Deploy do VoePro levando o que não foi revisado** (R14) | MÉDIO | passos 2, 3 e 3b em deploys só com eles |
-| L-12 | **Versões**: o pacote espera o mesmo Prisma 7.10 e o mesmo Next 16.3.8 | MÉDIO | o script confere a versão maior e a menor do `prisma` e do `@prisma/client` |
+| L-12 | **Versões**: o pacote espera o mesmo Prisma 7.10 e o mesmo Next 16.3.8 | MÉDIO | o script confere a versão instalada (lockfile) do `prisma`, `@prisma/client` e `@prisma/adapter-pg`; o VoePro crava 7.10.0 no passo 2 |
 | L-13 | **Dois painéis por uma semana**, com regras de acesso diferentes | BAIXO | a controle confere `ofertas.acesso` e os interruptores lado a lado |
 
 ## Como provar
@@ -482,3 +504,7 @@ VoePro sobre o pacote.
   antes e depois de cada deploy.
 - Revisões do revisor da fusão sobre esta especificação (02/11): a primeira
   versão e esta, **OK com ressalvas**, todas incorporadas.
+- **Veredito do Guardião sobre o plano dos passos 1 e 1b (02/11, `f447f2d`):
+  OK com ressalvas**, nenhuma trava o passo 1; as oito ressalvas estão
+  incorporadas acima. A exceção ao princípio 1 está aceita e vai para o
+  FUSAO. O Saulo pode dar o "sim" do passo 1.
