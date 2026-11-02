@@ -21,7 +21,17 @@ deploy anterior.
    `ofertas.srrviagens.com.br` só redireciona para lá e, se puder, se
    aposenta depois.
 4. **O motor segue no notebook para lançar rápido**; ir para um servidor na
-   nuvem é a etapa [L2](L2-motor-na-nuvem.md).
+   nuvem é a etapa [L2](L2-motor-na-nuvem.md) (o servidor ele escolhe depois;
+   não trava a L).
+5. **Dois interruptores** na Equipe do VoePro: "Radar" (ver, buscar,
+   conferir) e "Radar: valores" (mudar margem, milheiro, regras).
+6. **Uma chave de banco própria para as telas, sem poder de apagar tabela**
+   (`srr_ofertas_tela`).
+
+**Condição do Guardião para o passo 1** (FUSAO, R18 e seção 6): o plano
+mostra como o VoePro lê o `ofertas` **sem virar dono dele nem migrá-lo**, e o
+que acontece com o projeto `srr-ofertas` na Vercel (R11). Respondida em
+"Plano do passo 1" abaixo.
 
 A primeira versão desta especificação (Radar como aplicação à parte,
 repassada pelo VoePro com `basePath` e rewrite) caiu com a resposta 2: dava a
@@ -158,7 +168,7 @@ escrita para a sessão do VoePro, com estas exigências:
 13. `ofertas.srrviagens.com.br` passa a só redirecionar para
     `voepro.srrviagens.com.br/ofertas`; o painel próprio, o `/entrar`, o
     captcha e `ofertas.acesso` se aposentam; o projeto da Vercel do Radar vira
-    só o redirecionamento (ou sai, se o redirecionamento for feito no DNS).
+    só o redirecionamento (ver "A condição R11" no plano abaixo).
     Isso fecha o `.vercel.app` aberto (R5) e corta builds (R16).
 14. **Atenção, R11:** hoje o build da Vercel do Radar é o **único caminho
     automático** das migrações do `ofertas` para a produção. Quando ele parar
@@ -179,28 +189,185 @@ escrita para a sessão do VoePro, com estas exigências:
 
 ## Perguntas ao Saulo
 
-**5. Um interruptor ou dois?**
-- **A) Um só, "Radar":** quem tem, vê tudo e muda tudo, inclusive margem e
-  milheiro em Valores.
-- **B) Dois, "Radar" e "Radar: valores":** a curadoria vê, busca e confere;
-  mudar margem, milheiro e regras é de quem o Saulo escolher.
-- Nos dois casos, **todo Administrador do VoePro ganha os interruptores
-  sozinho** (é assim que o VoePro trata o Administrador hoje).
-- **Recomendação: B.** Valores muda o preço que vai para o cliente; é o mesmo
-  cuidado que o VoePro já tem com Configurações.
+Todas respondidas (ver "O que o Saulo decidiu"). Nota da pergunta 5: **todo
+Administrador do VoePro ganha os dois interruptores sozinho**, como o VoePro
+já trata o Administrador.
 
-**6. Com que chave as telas entram no banco?**
-- **A) A chave do Radar de hoje (`srr_ofertas`).** Ganha: nada a preparar.
-  Custa: esse papel é **dono** do schema `ofertas` e pode apagar qualquer
-  tabela dele. Um erro nas telas do VoePro teria esse poder.
-- **B) Uma chave só para as telas (`srr_ofertas_tela`):** lê o que as telas
-  mostram e grava **só** nas filas ("Buscar agora", "Conferir") e nos
-  valores; não cria, não muda e não apaga tabela. Custa: preparar o papel
-  uma vez (pelo `scripts/preparar-banco.mjs`, com o Saulo, linha no DIARIO);
-  tabela nova do Radar que as telas usarem precisa de permissão (a regra
-  padrão do Postgres já cobre as próximas).
-- **Recomendação: B.** É a mesma lógica que já separa o Radar do resto do
-  banco, um degrau abaixo.
+## Plano do passo 1 e do passo 1b (esperando o "sim" do Saulo e do Guardião)
+
+### A condição R18: como o VoePro lê o `ofertas` sem virar dono nem migrar
+
+Quatro travas, uma atrás da outra:
+
+1. **O `schema.prisma` do VoePro não muda.** Continua `schemas = ["crm"]`,
+   sem nenhum `@@schema("ofertas")`. O `migrate dev`/`deploy` do VoePro nunca
+   enxerga uma tabela do `ofertas`, então não gera nem aplica migração nela.
+2. **O cliente do `ofertas` no VoePro sai de uma cópia, por uma configuração
+   sem migrações e sem endereço**: `prisma/ofertas/schema.prisma` (copiado
+   pelo script, com o `generator` reescrito para `src/generated/ofertas`) e
+   `prisma.ofertas.config.ts` sem `migrations` e com `datasource.url` vazio.
+   Ela só serve para `prisma generate`. Não existe pasta de migrações do
+   `ofertas` no VoePro. **E o caminho por fora fica fechado:** o
+   `prisma.config.ts` do VoePro (o padrão, com o `postgres` e as migrações do
+   `crm`) passa a **recusar** qualquer comando com `--schema` (para na hora,
+   com a explicação), para ninguém rodar `migrate dev` ou `db push` com a
+   cópia do `ofertas` por cima do padrão. O `exportar-pacote` grava no topo da
+   cópia um aviso "não migrar: o dono deste schema é o srr-ofertas".
+   Exigência escrita para a sessão do VoePro.
+3. **Em funcionamento, o VoePro entra no `ofertas` só com o papel
+   `srr_ofertas_tela`**, que **não é dono** do schema e não tem direito de
+   criar, mudar ou apagar tabela. Mesmo um `migrate deploy` rodado por engano
+   com essa chave falha no primeiro `CREATE`. A chave dele é só a 6543
+   (pooler); nenhuma URL 5432 do `ofertas` existe no VoePro.
+4. **O usuário `postgres` do VoePro nunca é usado para o `ofertas`.** O cliente
+   do `crm` não tem nenhum modelo do `ofertas`. Uma regra de eslint e uma
+   busca no revisor barram, fora de `src/radar/`, o import de
+   `@/generated/ofertas`, SQL escrito à mão que cite o schema (`ofertas.`,
+   com ou sem aspas) e qualquer `search_path`.
+   **Atenção, esta trava é só de revisão:** o `postgres` é membro do papel
+   dono `srr_ofertas` (`scripts/preparar-banco.mjs`, linha 85, de propósito
+   na O0), então a chave do VoePro **pode** hoje apagar tabelas do `ofertas`.
+   A barreira de verdade é tirar essa herança: depois da 1b, o Guardião avalia
+   `INHERIT FALSE` na filiação (o `postgres` só administra o `ofertas` com
+   `SET ROLE`, de propósito) ou o usuário próprio do VoePro (`srr_voepro`,
+   em aberto no FUSAO). O comentário de `preparar-banco.mjs` (linhas 83–84,
+   "é por ele que o VoePro vai ler as ofertas") fica superado e é corrigido
+   no passo 1b.
+
+**Migração do `ofertas` continua tendo um caminho só:** o `srr-ofertas`, com
+o papel `srr_ofertas` (dono). `ofertas._prisma_migrations` só recebe linha
+dele.
+
+### A condição R11: o projeto `srr-ofertas` na Vercel
+
+- **Até o passo 4:** continua igual (o painel próprio, e o build com
+  `migrate deploy` na produção). É o único caminho automático das migrações
+  do `ofertas`; por isso nenhuma migração entra no `main` durante a L.
+- **No passo 4:** o painel próprio sai e **nenhum build do Radar toca mais o
+  banco**:
+  - o `migrate deploy` sai do build de Production **e** do de Preview (que
+    hoje migra o banco de testes); as variáveis de banco saem dos dois
+    ambientes;
+  - **os deploys antigos guardam a chave dona** e continuariam abertos pelos
+    endereços `.vercel.app`: são apagados (ou ficam todos atrás da proteção
+    da Vercel), e **a senha do `srr_ofertas` é trocada** (o `.env` do
+    notebook do motor ganha a nova, pelo Saulo);
+  - o redirecionamento (redirecionar não se faz pelo DNS, que não sabe de
+    caminho), escolha na hora do passo 4, com o Guardião: **A)** o projeto
+    `srr-ofertas` fica mínimo, só com `redirects` no `vercel.json` (307
+    primeiro, 308 depois de uma semana), sem build do Next e com o build
+    ignorado nos pushes do `main` (o motor continua atualizando do `main` sem
+    gerar build; R16); ou **B)** o domínio passa para o projeto do VoePro,
+    com redirecionamento por host no `next.config.ts` de lá (mexe no VoePro,
+    R6), e o projeto do Radar é apagado. Recomendação: **A**, não toca o
+    VoePro;
+  - o mapa de caminhos: `/` → `/ofertas`, `/pacotes` → `/ofertas/pacotes`,
+    `/buscas` → `/ofertas/buscas`, `/valores` → `/ofertas/valores`, `/saude` →
+    `/ofertas/saude`, `/entrar` → `/login` do VoePro.
+- Daí em diante, migração do `ofertas` é **manual**, na ordem do item 14
+  (migrar com o Saulo e DIARIO → `main` → exportar o pacote → deploy do
+  VoePro), e **só aditiva** enquanto o VoePro tiver a cópia: tirar ou
+  renomear coluna vira duas fases (o VoePro para de usar, depois o Radar
+  tira).
+
+### Passo 1 — no Radar (`srr-ofertas`), um ramo `l/passo-1-pacote` saído do `main`
+
+**1. A saída do gerador.** `prisma/schema.prisma`: `output =
+"../src/generated/ofertas"`. Os 6 arquivos que importam
+`@/generated/prisma` passam a `@/generated/ofertas` (`src/lib/prisma.ts`,
+`coleta/gravar.ts`, `ofertas/vitrine.ts`, `alertas/alertas.ts`,
+`alertas/conferencia.ts`, `alertas/ponte.ts`). `.gitignore` troca a pasta.
+
+**2. O pacote, `src/pacote/`** (só o que as telas usam; tudo que hoje está
+nestes arquivos muda de lugar com `git mv`, sem reescrever lógica):
+
+| arquivo no pacote | vem de | por quê |
+|---|---|---|
+| `banco.ts` | novo | `usarBanco(cliente)` e `banco()`: o pacote recebe o cliente de quem o usa |
+| `configuracao.ts` | `lib/configuracao.ts` | catálogo das chaves, leitura, limites |
+| `erros.ts`, `datas.ts`, `companhias.ts` | `lib/` | funções puras usadas pelas telas e pelo motor |
+| `formato.ts` | `app/_componentes/formato.ts` | o mesmo jeito de mostrar dinheiro, milhas e datas nos dois painéis |
+| `vitrine.ts`, `preco.ts` | `lib/ofertas/` | a leitura da vitrine e o preço de venda (só as telas usam) |
+| `saude/motor.ts`, `saude/revalidador.ts`, `saude/alertas.ts` | `lib/*/saude.ts` | a tela de Saúde |
+| `alertas.ts` | trechos de `lib/alertas/regras.ts` | só `FONTE_ALERTA` e o tipo `DadosDoAlerta`, que a vitrine e a saúde usam; o leitor e as regras ficam no motor |
+| `conferencia.ts` | `registrarConferencia` e o tipo `ResultadoConferencia` (de `coleta/gravar.ts`) e `conferirAMao` (de `alertas/conferencia.ts`) | o "Conferi" da equipe: só lê e grava a oferta |
+| `leituras.ts` | as consultas que hoje estão dentro das telas (`buscas/page.tsx`, `valores/page.tsx`, a fila e o `fonte_acesso` em `Vitrine.tsx`) | as telas não falam com o banco direto: no VoePro, o cliente do `ofertas` só existe dentro de `src/radar/` |
+| `gravacoes.ts` | o miolo de `app/acoes.ts` | as gravações das telas, com a validação, **sem** login e sem Next: cada função recebe valores já lidos do formulário |
+
+Regras do pacote, conferidas por uma busca no `npm run check`: só importa de
+dentro dele e de `@/generated/ofertas/client`; nunca `@/lib/`, `@/app/`,
+`next/*` ou `@/generated/prisma`.
+
+**3. O motor e o resto de `src/lib/` passam a importar do pacote** o que
+mudou de lugar (configuração, erros, datas, companhias, `FONTE_ALERTA`,
+`registrarConferencia`). Os outros arquivos ficam onde estão.
+
+**4. As telas do próprio Radar** passam a usar o pacote: `app/acoes.ts`
+fica só com o login (`exigirAcesso`), a leitura do formulário e o
+`refresh()`, e chama `gravacoes.ts`.
+
+**5. Uma mudança visível, pequena:** ao salvar uma regra de alerta em
+Valores, os alertas recentes hoje são relidos **dentro da tela**, na hora. No
+pacote, a tela só marca "ler de novo" (`alerta_mensagem.lida_em = null` e
+desliga as ofertas de alerta) e **o motor relê na passada seguinte** (ele
+lê os pendentes a cada passada, em lotes de 200; conferido em
+`processarAlertas`). A espera é de até uma passada inteira (a coleta da
+passada mais o intervalo do motor); o tempo real é medido na prova. Assim
+nenhuma tela roda código do motor. Dois casos ficam diferentes de hoje: com
+o motor parado, as ofertas de alerta somem até ele voltar (a Saúde já avisa
+motor parado); com a fonte "Alerta CPM" desligada em Valores, elas ficam
+fora até a fonte ser religada (hoje a tela relê mesmo assim).
+
+**6. O script `scripts/exportar-pacote.mjs`** (como descrito no item 4 de
+"O que muda").
+
+**7. Nenhuma migração, nenhuma variável nova, nenhuma tela nova.**
+
+**Provas do passo 1:** `npm run check`; no computador, contra o banco de
+testes, o painel mostra os mesmos números de antes nas cinco abas
+(comparados com consulta direta); "Buscar agora", "Conferir agora",
+"Conferi" e salvar em Valores gravam o mesmo que antes; **o motor sobe com
+o código novo e faz passadas ok** (coleta gravada, alertas relidos depois de
+mudar uma regra); `exportar-pacote` numa cópia de teste do VoePro.
+
+### Passo 1b — o papel `srr_ofertas_tela`
+
+Feito pelo `scripts/preparar-banco.mjs` (ganha a opção `--papel-tela`), como
+o papel do Radar foi feito na O0: senha gerada pelo script, gravada só em
+arquivo (`.env.voepro-ofertas`, fora do git), nunca no chat. Roda primeiro
+no banco de testes, depois na produção, **pelo Saulo**, com linha no DIARIO.
+
+O que o papel pode (e só isso):
+
+| direito | onde |
+|---|---|
+| entrar no schema (`USAGE`) | `ofertas` |
+| **ler** (`SELECT`) | todas as tabelas do `ofertas`, e as futuras (`ALTER DEFAULT PRIVILEGES FOR ROLE srr_ofertas IN SCHEMA ofertas GRANT SELECT ON TABLES TO srr_ofertas_tela`; funciona porque o administrador é membro do `srr_ofertas`) |
+| **inserir** | `busca_agora`, `conferencia_pedido`, `busca`, `lugar`, `margem`, `parcela_taxa`, `faixa_busca`, `alerta_origem` |
+| **alterar** | `busca`, `lugar`, `programa`, `margem`, `parcela_taxa`, `faixa_busca`, `fonte`, `configuracao`, `alerta_programa`, `alerta_origem`; `alerta_mensagem` **só a coluna** `lida_em`; `oferta` **só as colunas** do "Conferi" e da releitura (`ativa`, `milhas`, `milhas_normal`, `preco_brl`, `taxas_brl`, `taxas_estimadas`, `conferida_em` e as `conferencia_*`), nunca `link`, `chave` nem `dados_fonte` (a lista exata sai do código no passo 1b) |
+| **apagar linha** | `busca`, `parcela_taxa`, `faixa_busca`, `alerta_origem` |
+| usar as sequências (ids) | `busca`, `faixa_busca`, `busca_agora`, `conferencia_pedido` |
+
+O que o papel **não** pode: ser dono de nada, `CREATE`, `ALTER`, `DROP`,
+`TRUNCATE`, `REFERENCES`, `TRIGGER`; tocar `acesso` (se aposenta) e as
+tabelas do motor (`passada`, `coleta`, `motor_*`, `preco_observado`), que ele
+só lê. Tabela nova do Radar que as telas precisarem **gravar** leva o seu
+`GRANT` na própria migração, **sempre dentro de uma guarda** que só concede
+se o papel existir (`DO $$ … IF EXISTS (SELECT 1 FROM pg_roles WHERE
+rolname = 'srr_ofertas_tela') …`), para a migração não quebrar num banco sem
+ele (regra nova da casa, escrita no README; o revisor passa a olhar isso).
+Sequência nova também leva o seu `GRANT USAGE` (a regra padrão acima só
+cobre leitura de tabelas).
+
+Na produção, antes de rodar: conferir em `pg_auth_members` que o
+administrador é mesmo membro do `srr_ofertas`; depois de rodar: conferir em
+`pg_default_acl` a regra de leitura das tabelas futuras.
+
+**Prova do passo 1b:** com a chave nova, no banco de testes: ler a vitrine,
+pedir "Buscar agora" e salvar uma margem funcionam; `DROP TABLE`,
+`ALTER TABLE`, `TRUNCATE`, `DELETE FROM ofertas.oferta` e `CREATE TABLE` no
+`ofertas` são **recusados**; o papel não aparece como dono de nada
+(`pg_tables`, `pg_namespace`).
 
 ## Os passos (cada um com o "sim" do Saulo e em deploy próprio)
 
