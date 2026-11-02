@@ -14,7 +14,7 @@
   align-items: center;
   gap: 18px;
   padding: 22px 24px;
-  border-radius: 14px;
+  border-radius: var(--raio-card);
   border: 1px solid var(--line);
   background: var(--panel);
   transition: background 200ms ease, border-color 200ms ease;
@@ -96,7 +96,7 @@
 .numero {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--raio-card);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -136,7 +136,7 @@
 .bloco {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--raio-card);
   padding: 16px 18px;
 }
 
@@ -184,7 +184,7 @@
 }
 
 .etiqueta {
-  border-radius: 20px;
+  border-radius: var(--raio-pilula);
   padding: 1px 10px;
   font-size: 12px;
   font-weight: 600;

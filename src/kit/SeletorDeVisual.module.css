@@ -1,0 +1,101 @@
+/* O seletor de tema e cor do kit da SRR (etapa D). Usa só as variáveis do
+   kit.css. */
+
+.seletor {
+  position: relative;
+  align-self: flex-start;
+}
+.emPe {
+  align-self: center;
+}
+
+.grupo {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--raio-pilula);
+  background: var(--sunk);
+}
+.emPe .grupo {
+  flex-direction: column;
+  border-radius: 18px;
+}
+.grupo form {
+  display: contents;
+}
+
+.bt {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--raio-pilula);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  flex: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.bt:hover,
+.btOn {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.paleta {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 41;
+  width: 212px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(0, 20, 35, 0.22);
+}
+.emPe .paleta {
+  left: calc(100% + 12px);
+  bottom: 0;
+}
+.paleta b {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.paleta small {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.cores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cor {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.cor[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink);
+}

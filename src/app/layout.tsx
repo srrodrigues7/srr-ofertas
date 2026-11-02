@@ -1,22 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { cookies } from "next/headers";
+import { classesDasFontes } from "@/kit/fontes";
+import { visualDoNavegador, visualQueVale } from "@/kit/visual";
+// O kit da SRR primeiro (cores, letra, cantos, barras: o mesmo do VoePro);
+// depois o que é só do Radar.
+import "@/kit/kit.css";
 import "./globals.css";
-
-// As mesmas duas fontes do VoePro e do MilesPro (docs/marca.md do VoePro):
-// Inter no texto, Space Grotesk nos títulos e números.
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--fonte-corpo",
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--fonte-titulo",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "SRR Ofertas",
@@ -26,9 +15,22 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/**
+ * A casca de todas as telas. A letra (Plus Jakarta Sans, servida daqui: o build
+ * não depende do Google) e o visual vêm do kit da SRR (`src/kit/`, copiado do
+ * VoePro — ver `src/kit/ORIGEM.md`).
+ *
+ * O tema (claro/escuro) e a cor de destaque são os que a pessoa escolheu neste
+ * navegador, guardados nos cookies `srr_tema` e `srr_cor` pelo botão do
+ * cabeçalho. Sem escolha: claro e o verde da casa, não o que o Windows pede.
+ * Ler os cookies torna o layout dinâmico — no Radar, que já pede login em toda
+ * tela, isso não muda nada.
+ */
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const pote = await cookies();
+  const visual = visualQueVale(visualDoNavegador((nome) => pote.get(nome)?.value));
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="pt-BR" className={classesDasFontes} data-theme={visual.tema} data-accent={visual.cor}>
       <body>{children}</body>
     </html>
   );

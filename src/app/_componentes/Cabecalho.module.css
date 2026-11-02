@@ -15,10 +15,8 @@
 }
 
 /* No tema escuro a logo ganha uma placa clara (mesma regra do VoePro). */
-@media (prefers-color-scheme: dark) {
-  .placa {
-    background: #f1f5f9;
-  }
+:global([data-theme="escuro"]) .placa {
+  background: #f1f5f9;
 }
 
 .logo {
@@ -51,13 +49,13 @@
   flex-wrap: wrap;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--raio-pilula);
   padding: 4px;
 }
 
 .aba {
   padding: 7px 14px;
-  border-radius: 9px;
+  border-radius: var(--raio-pilula);
   color: var(--ink-2);
   text-decoration: none;
   font-size: 14px;
@@ -70,7 +68,7 @@
 
 .atual {
   background: var(--brand);
-  color: #fff;
+  color: var(--sobre-acento);
 }
 
 .atual:hover {
@@ -112,11 +110,28 @@
   color: var(--ink-2);
   background: transparent;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--raio-pilula);
   padding: 4px 10px;
   cursor: pointer;
 }
 
 .sair:hover {
   background: var(--sunk);
+}
+
+/* A lua e a paleta do kit (tema e cor de destaque). */
+.visual {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+}
+
+/* A paleta do kit abre para cima (no VoePro o botão fica no pé do menu); aqui,
+   no topo da tela, ela abre para baixo. */
+.visual :global([role="dialog"]) {
+  top: calc(100% + 8px);
+  bottom: auto;
+  left: auto;
+  right: 0;
 }

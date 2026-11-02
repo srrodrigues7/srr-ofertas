@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { quemEntrou } from "@/lib/acesso/acesso";
+import SeletorNoNavegador from "@/kit/SeletorNoNavegador";
+import { visualDoNavegador, visualQueVale } from "@/kit/visual";
 import { sair } from "../entrar/acoes";
 import s from "./Cabecalho.module.css";
 
@@ -11,9 +14,12 @@ const ABAS = [
   { href: "/saude", rotulo: "Saúde" },
 ] as const;
 
-/** O cabeçalho de todas as telas: logo, nome, o que é esta tela, as abas e quem entrou. */
+/** O cabeçalho de todas as telas: logo, nome, o que é esta tela, as abas, o tema e a cor, e quem entrou. */
 export default async function Cabecalho({ atual, subtitulo }: { atual: (typeof ABAS)[number]["href"]; subtitulo: string }) {
   const quem = await quemEntrou();
+  // O tema e a cor de partida do seletor: os mesmos cookies que o layout raiz lê.
+  const pote = await cookies();
+  const visual = visualQueVale(visualDoNavegador((nome) => pote.get(nome)?.value));
   return (
     <header className={s.cabecalho}>
       <span className={s.placa}>
@@ -31,6 +37,10 @@ export default async function Cabecalho({ atual, subtitulo }: { atual: (typeof A
           </Link>
         ))}
       </nav>
+      {/* A lua e a paleta do kit: a escolha fica num cookie deste navegador. */}
+      <div className={s.visual}>
+        <SeletorNoNavegador inicial={visual} />
+      </div>
       {quem ? (
         <form action={sair} className={s.quem}>
           <span title="Você entrou com esta conta">{quem.email}</span>

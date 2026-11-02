@@ -16,7 +16,8 @@
   max-width: 400px;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--raio-painel);
+  box-shadow: var(--sombra);
   padding: 32px 28px 28px;
   display: flex;
   flex-direction: column;
@@ -48,10 +49,8 @@
   margin-bottom: 8px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .placa {
-    background: #f1f5f9;
-  }
+:global([data-theme="escuro"]) .placa {
+  background: #f1f5f9;
 }
 
 .logo {
@@ -96,7 +95,7 @@
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--raio-campo);
   padding: 10px 12px;
   transition: border-color 150ms;
 }
@@ -111,7 +110,7 @@
   font: inherit;
   font-size: 15px;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: var(--raio-pilula);
   padding: 10px 16px;
   cursor: pointer;
   transition: filter 150ms;
@@ -120,7 +119,7 @@
 .botao {
   border: 1px solid var(--brand);
   background: var(--brand);
-  color: #fff;
+  color: var(--sobre-acento);
 }
 
 .botao:hover {
