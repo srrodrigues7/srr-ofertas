@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
-import { codigoDaCompanhia, nomeDaCompanhia } from "@/lib/companhias";
-import { diasEntre, hoje, mesDe, somarDias } from "@/lib/datas";
+import { lerConfiguracao } from "@/pacote/configuracao";
+import { codigoDaCompanhia, nomeDaCompanhia } from "@/pacote/companhias";
+import { diasEntre, hoje, mesDe, somarDias } from "@/pacote/datas";
 import { desativarAusentes, gravarLugares, gravarOfertas, gravarPrecos } from "./gravar";
 import type { LugarVisto, OfertaNova, PrecoNovo, Regime } from "./molde";
 import { executar, fontePausada, fontesLigadas, ultimasColetas, vencimento, type Log, type Tarefa } from "./nucleo";

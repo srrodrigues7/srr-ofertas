@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/ofertas/client";
 import { prisma } from "@/lib/prisma";
-import { mensagemDe } from "@/lib/erros";
+import { mensagemDe } from "@/pacote/erros";
 
 /**
  * A PONTE (V6): copia as mensagens do grupo de passagens do arquivo do monitor

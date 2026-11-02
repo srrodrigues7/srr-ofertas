@@ -4,7 +4,7 @@
  *
  *   npm run saude
  */
-import { ErroDeConfiguracao, exigirAmbiente, mensagemDe } from "@/lib/erros";
+import { ErroDeConfiguracao, exigirAmbiente, mensagemDe } from "@/pacote/erros";
 
 try {
   process.loadEnvFile();
@@ -23,7 +23,7 @@ const fmt = new Intl.DateTimeFormat("pt-BR", {
 
 try {
   exigirAmbiente(["DATABASE_URL"]);
-  const { lerSaude, duracao } = await import("@/lib/motor/saude");
+  const { lerSaude, duracao } = await import("@/pacote/saude/motor");
   const { prisma } = await import("@/lib/prisma");
   const s = await lerSaude();
   const sinal = { verde: "🟢", amarelo: "🟡", vermelho: "🔴" }[s.cor];

@@ -27,7 +27,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
-import { ErroDeConfiguracao, SAIDA_CONFIGURACAO, exigirAmbiente, mensagemDe } from "@/lib/erros";
+import { ErroDeConfiguracao, SAIDA_CONFIGURACAO, exigirAmbiente, mensagemDe } from "@/pacote/erros";
 import { criarLog } from "@/lib/log";
 import type { Instancia } from "@/lib/motor/trava";
 
@@ -119,7 +119,7 @@ async function principal(): Promise<number> {
 
   // Só depois de conferir o .env: o módulo do banco recusa subir sem ele.
   const { prisma } = await import("@/lib/prisma");
-  const { lerConfiguracao, CHAVES_DO_MOTOR, CHAVES_DA_COLETA, CHAVES_DOS_ALERTAS } = await import("@/lib/configuracao");
+  const { lerConfiguracao, CHAVES_DO_MOTOR, CHAVES_DA_COLETA, CHAVES_DOS_ALERTAS } = await import("@/pacote/configuracao");
   const trava = await import("@/lib/motor/trava");
   const coleta = await import("@/lib/coleta/passagens");
   const pacotes = await import("@/lib/coleta/pacotes");

@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
+import { prisma } from "./banco";
+import { lerConfiguracao } from "./configuracao";
 
 /**
  * A regra do preço — num lugar só, usada pela vitrine e, depois, pela nota

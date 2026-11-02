@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
-import { mensagemDe } from "@/lib/erros";
-import { nomeDaCompanhia } from "@/lib/companhias";
-import { lerVitrine, type Filtros, type GrupoVitrine, type ItemVitrine } from "@/lib/ofertas/vitrine";
+import { lerFilasDaVitrine } from "@/pacote/leituras";
+import { mensagemDe } from "@/pacote/erros";
+import { nomeDaCompanhia } from "@/pacote/companhias";
+import { lerVitrine, type Filtros, type GrupoVitrine, type ItemVitrine } from "@/pacote/vitrine";
 import { buscarAgora, conferirAgora } from "../acoes";
 import Atualizador from "./Atualizador";
 import Cabecalho from "./Cabecalho";
 import { ConferenciaDoAlerta, DatasDoAlerta, ReferenciaDoAlerta } from "./Alerta";
-import { BAGAGEM, CLASSE, data, duracao, haQuanto, horaLocal, milhas, nomeDoMes, prazo, reais, reaisInteiro } from "./formato";
+import { BAGAGEM, CLASSE, data, duracao, haQuanto, horaLocal, milhas, nomeDoMes, prazo, reais, reaisInteiro } from "@/pacote/formato";
 import s from "../tela.module.css";
 
 /**
@@ -51,12 +51,8 @@ export default async function Vitrine({ tipo, sp }: { tipo: Tipo; sp: Busca }) {
   let revalidaveis = new Set<string>();
   try {
     vitrine = await lerVitrine(filtros);
-    const fila = await prisma.buscaAgora.findMany({ where: { status: { in: ["na_fila", "buscando"] } } });
-    pendentes = new Map(fila.map((p) => [p.buscaId, p.status]));
-    // A conferência na fonte (V1b): o que está na fila e quais fontes têm revalidador.
-    const conf = await prisma.conferenciaPedido.findMany({ where: { status: { in: ["na_fila", "conferindo"] } } });
-    conferindo = new Map(conf.map((c) => [c.ofertaId.toString(), c.status]));
-    revalidaveis = new Set((await prisma.fonteAcesso.findMany({ select: { fonteId: true } })).map((a) => a.fonteId));
+    // A fila ao lado: "Buscar agora" e a conferência na fonte (V1b), e quais fontes têm revalidador.
+    ({ pendentes, conferindo, revalidaveis } = await lerFilasDaVitrine());
   } catch (e) {
     falha = mensagemDe(e);
   }

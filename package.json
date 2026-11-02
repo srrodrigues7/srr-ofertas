@@ -13,7 +13,7 @@
     "start": "next start",
     "lint": "eslint",
     "tipos": "tsc --noEmit",
-    "check": "prisma validate && eslint && tsc --noEmit && next build",
+    "check": "prisma validate && node scripts/conferir-pacote.mjs && eslint && tsc --noEmit && next build",
     "postinstall": "prisma generate",
     "motor": "tsx src/motor/motor.ts",
     "vigia": "tsx src/motor/vigia.ts",

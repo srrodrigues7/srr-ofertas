@@ -16,5 +16,5 @@ logs/
 node_modules/
 .next/
 src/generated/
-pacote/
+/pacote/
 instalador/

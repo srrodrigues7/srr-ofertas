@@ -9,7 +9,9 @@ logs/
 *.tsbuildinfo
 next-env.d.ts
 src/generated/
-pacote/
+# A saída do montador do instalador (scripts/montar-pacote.mjs), só na raiz:
+# não confundir com src/pacote/, o pacote do Radar que vai para o VoePro.
+/pacote/
 
 # Sessão do robô no portal da operadora (cookies de login): nunca no commit.
 .dados/

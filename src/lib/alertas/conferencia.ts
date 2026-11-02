@@ -1,8 +1,8 @@
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/ofertas/client";
 import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
-import { dormir, hoje } from "@/lib/datas";
-import { registrarConferencia } from "@/lib/coleta/gravar";
+import { lerConfiguracao } from "@/pacote/configuracao";
+import { dormir, hoje } from "@/pacote/datas";
+import { registrarConferencia } from "@/pacote/conferencia";
 import { executar, type Log } from "@/lib/coleta/nucleo";
 import { calendarioSmiles } from "@/lib/coleta/fontes/smiles";
 import { FONTE_ALERTA, type DadosDoAlerta } from "./regras";
@@ -213,40 +213,4 @@ async function conferirNaSmiles(
   }
   await registrarConferencia(o.id, { resultado: "ok", valor: milhas, motivo: `calendário da Smiles: ${datas}` });
   return datas;
-}
-
-/**
- * "Conferi" — a equipe conferiu no site do programa (decisão do Saulo para
- * Azul, LATAM e Smiles executiva, e para a taxa que o alerta não deu). Fica o
- * nome de quem conferiu e a hora. Sem a taxa, não há selo.
- */
-export async function conferirAMao(
-  ofertaId: bigint,
-  c: { quem: string; esgotou: boolean; milhas: number | null; taxasBrl: number | null },
-): Promise<void> {
-  const o = await prisma.oferta.findUniqueOrThrow({
-    where: { id: ofertaId },
-    select: { milhas: true, taxasBrl: true, ativa: true },
-  });
-  if (!o.ativa) throw new Error("Esta oferta já saiu da vitrine.");
-  const quem = c.quem.trim().slice(0, 60);
-  if (!quem) throw new Error("Diga quem conferiu.");
-  if (c.esgotou) {
-    await registrarConferencia(ofertaId, { resultado: "esgotou", motivo: `esgotou — conferido à mão por ${quem}` });
-    return;
-  }
-  const taxas = c.taxasBrl ?? o.taxasBrl?.toNumber() ?? null;
-  if (taxas == null || !(taxas >= 0)) throw new Error("Informe a taxa total em reais (ida + volta, por pessoa).");
-  if (c.milhas != null && !(c.milhas > 0)) throw new Error("Milhas inválidas.");
-  // No alerta, milhas e "normal" são o mesmo número (Azul e LATAM custam pela
-  // normal): a correção vale para as duas.
-  await prisma.oferta.update({
-    where: { id: ofertaId },
-    data: { taxasBrl: taxas, taxasEstimadas: false, ...(c.milhas != null ? { milhasNormal: c.milhas } : {}) },
-  });
-  await registrarConferencia(ofertaId, {
-    resultado: "ok",
-    valor: c.milhas ?? o.milhas,
-    motivo: `conferido à mão por ${quem}`,
-  });
 }

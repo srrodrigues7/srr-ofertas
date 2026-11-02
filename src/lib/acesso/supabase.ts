@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { NextRequest, NextResponse } from "next/server";
-import { ErroDeConfiguracao } from "@/lib/erros";
+import { ErroDeConfiguracao } from "@/pacote/erros";
 
 /**
  * O porteiro do painel é o Auth do Supabase — o mesmo do MilesPro, no projeto

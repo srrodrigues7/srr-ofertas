@@ -39,7 +39,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
 | V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main). Na produção, 0 ofertas até agora: **não é defeito** (nada novo no grupo desde sexta 30/10; ver C2 no fim deste arquivo). Prova com o grupo de verdade: primeiro dia útil, 03/11 |
 | L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída e publicada** (01/11, `ofertas.srrviagens.com.br`; publicação conduzida pelo Guardião da fusão). "Sair" corrigido para só o Radar (C3, 02/11, no ramo `publicar/c3-e-visual`) |
-| L    | [Radar dentro do VoePro](L-radar-no-voepro.md) — as telas do Radar viram telas do VoePro (menu lateral, `/ofertas`, interruptor na Equipe); o motor fica aqui | L0 | alto (encostado no xalto) | **especificação reescrita** (02/11, com as 4 respostas do Saulo; revisor da fusão OK com ressalvas, incorporadas); todas as perguntas respondidas (dois interruptores; chave de banco só das telas); **plano dos passos 1 e 1b aprovado pelo Guardião (OK com ressalvas, incorporadas); espera o "sim" do Saulo para construir o passo 1** |
+| L    | [Radar dentro do VoePro](L-radar-no-voepro.md) — as telas do Radar viram telas do VoePro (menu lateral, `/ofertas`, interruptor na Equipe); o motor fica aqui | L0 | alto (encostado no xalto) | **especificação reescrita** (02/11, com as 4 respostas do Saulo; revisor da fusão OK com ressalvas, incorporadas); todas as perguntas respondidas (dois interruptores; chave de banco só das telas); **passo 1 construído** (02/11, ramo `l/passo-1-pacote`, provado no banco de testes; espera o revisor e o push); 1b espera |
 | L2   | [Motor na nuvem](L2-motor-na-nuvem.md) — o motor num servidor alugado em São Paulo, sem depender do notebook (decisão do Saulo, 02/11) | L0 | alto | **especificação escrita** (02/11); espera a escolha do servidor e da ponte dos alertas |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
 
@@ -1228,3 +1228,81 @@ os deploys da L.
   `data-accent="srr"`, sem fonte do Google; `/valores` sem sessão → 303 para
   `/entrar`. **Falta a prova do Saulo no domínio**: visual nas telas de
   dentro, e "Sair" do Radar sem derrubar o MilesPro.
+
+### L — passo 1: o pacote do Radar (construído em 02/11/2026, ramo `l/passo-1-pacote`)
+
+**O que mudou** (plano em [L-radar-no-voepro.md](L-radar-no-voepro.md), "Plano do passo 1")
+
+- **`src/pacote/`**: o que as telas usam, sem Next, sem login, sem
+  `@/lib/`. Recebe o banco de quem o usa (`banco.ts`, `usarBanco`; no Radar,
+  `src/lib/prisma.ts`). Arquivos que só mudaram de lugar (`git mv`, sem
+  reescrever lógica): `configuracao`, `erros`, `datas`, `companhias`,
+  `formato`, `vitrine`, `preco`, `saude/{motor,revalidador,alertas}`. Novos:
+  `alertas.ts` (`FONTE_ALERTA` e o tipo `DadosDoAlerta`, tirados de
+  `lib/alertas/regras.ts`, que os reexporta), `conferencia.ts`
+  (`registrarConferencia` e `ResultadoConferencia`, de `coleta/gravar.ts`;
+  `conferirAMao`, de `alertas/conferencia.ts`), `leituras.ts` (as consultas
+  que estavam dentro das telas de Pedidos de busca, Valores e da vitrine) e
+  `gravacoes.ts` (o miolo de `app/acoes.ts`: validação e gravação, sem login).
+- **O cliente do banco** sai em `src/generated/ofertas` (era
+  `src/generated/prisma`, o mesmo caminho do cliente do `crm` no VoePro).
+- **`app/acoes.ts`** ficou só com a porta (`exigirAcesso`), a chamada ao pacote
+  e o `refresh()`; a lista de quem entra no painel continua aqui (se aposenta).
+- **Mudança visível:** salvar uma regra de alerta em Valores **marca** os
+  alertas recentes para reler e desliga as ofertas de alerta; **o motor relê
+  na passada seguinte, ou em mais de uma** (200 mensagens por passada, e só
+  com a fonte "Alerta CPM" ligada; antes a tela relia na hora). O `relerRecentes` do
+  motor usa a mesma marcação (`pedirReleituraDosAlertas`).
+- **`scripts/conferir-pacote.mjs`** (no `npm run check`): o pacote só importa de
+  dentro dele e de `@/generated/ofertas/client`. **`scripts/exportar-pacote.mjs
+  <pasta do VoePro>`**: copia o pacote para `src/radar/` e o schema para
+  `prisma/ofertas/schema.prisma` (gerador reescrito, aviso "não migrar"),
+  `ORIGEM.md`; recusa por cima de mudança local, import proibido ou versão
+  instalada diferente do Prisma/Next.
+- `.gitignore` e `.vercelignore`: a regra `pacote/` (saída do montador do
+  instalador) virou `/pacote/`, só na raiz — a antiga escondia o `src/pacote/`
+  do git **e do build da Vercel**.
+- O layout raiz importa `@/lib/prisma` (entrega o banco ao pacote antes de
+  qualquer tela).
+- Nenhuma migração, nenhuma variável nova, nenhuma tela nova.
+
+**Provado (cópia de trabalho separada, banco de TESTES)** — o motor de
+produção roda da pasta principal com `tsx`, então nada foi mexido lá.
+
+- `npm run check` passa (com a trava do pacote); a trava recusa um import
+  proibido de propósito.
+- **As telas leem igual:** a vitrine (passagens e pacotes, quatro filtros), as
+  três saúdes e as consultas de Pedidos de busca e Valores, fotografadas antes
+  e depois no mesmo banco: **idênticas** (a única diferença, "segundos desde o
+  último sinal do motor", anda com o relógio). As três funções novas de
+  `leituras.ts` devolvem o mesmo que as consultas antigas das telas.
+- **As gravações pelo pacote:** desligar e religar fonte, salvar
+  configuração, salvar margem (mesmos números), "Buscar agora" sem duplicar,
+  "Conferi" numa oferta de alerta (taxa, selo "ok", nome de quem conferiu);
+  origem igual ao destino, chave desconhecida e oferta inválida **recusadas**.
+- **O motor com o código novo** (contra o banco de testes, com as fontes de
+  coleta desligadas para não bater nelas): passadas ok; a releitura marcou 106
+  mensagens e o motor releu todas (0 pendentes depois; ofertas de alerta de
+  volta). Os valores mexidos no banco de testes para a prova foram
+  restaurados (fontes, `alertas.validade_horas` 24,
+  `alertas.conferir_smiles_horas` 6, `ofertas.validade_horas` 48).
+- `exportar-pacote` numa cópia descartável do `package.json` e do lockfile do
+  VoePro: copia certo, recusa mudança local e versão diferente.
+- **Lição:** o `timeout` do Git Bash não encerra o `node` no Windows; o motor
+  de prova ficou rodando além da janela e foi parado à mão (processo dele,
+  conferido pelo número no log; o motor de produção não foi tocado). Para a
+  L2: prova de motor com prazo se faz pelo próprio motor, não por `timeout`.
+
+**Para publicar (o Saulo, com o Guardião)**
+
+1. Push do ramo para o `main` (o build da Vercel roda `migrate deploy`: não há
+   migração nova; conferir `ofertas._prisma_migrations` = 9 antes e depois).
+2. **Atualizar o motor do notebook, nesta ordem** (com o motor rodando, o
+   `git pull` troca de lugar arquivos que ele ainda carrega; sem o `npm ci`,
+   falta o cliente novo e ele não sobe): **parar** o `npm run motor`; `git
+   status` limpo na pasta principal; `git pull`; `npm ci` (gera o cliente em
+   `src/generated/ofertas`); **religar**; ver uma passada ok. Até isso, o
+   motor de produção segue no código antigo, que funciona com as telas novas
+   (ele já relê os alertas pendentes).
+3. Conferir no domínio: as cinco abas abrem; salvar uma regra de alerta em
+   Valores e ver os alertas voltarem em até uma passada.

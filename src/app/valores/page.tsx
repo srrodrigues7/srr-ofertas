@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { exigirAcessoNaTela } from "@/lib/acesso/acesso";
 import { prisma } from "@/lib/prisma";
+import { lerTelaDeValores } from "@/pacote/leituras";
 import {
   alternarAcesso,
   alternarFonte,
@@ -34,16 +35,7 @@ const fmt = (v: { toString(): string } | null | undefined) => (v == null ? "" : 
 export default async function ValoresPage() {
   await connection();
   const eu = await exigirAcessoNaTela();
-  const [programas, margens, parcelas, faixas, fontes, config, alertaOrigens, alertaProgramas] = await Promise.all([
-    prisma.programa.findMany({ orderBy: { nome: "asc" } }),
-    prisma.margem.findMany(),
-    prisma.parcelaTaxa.findMany({ orderBy: { parcelas: "asc" } }),
-    prisma.faixaBusca.findMany({ orderBy: { deMes: "asc" } }),
-    prisma.fonte.findMany({ orderBy: { nome: "asc" } }),
-    prisma.configuracao.findMany({ orderBy: { chave: "asc" } }),
-    prisma.alertaOrigem.findMany({ orderBy: { codigo: "asc" } }),
-    prisma.alertaPrograma.findMany({ orderBy: [{ vezes: "desc" }, { exemplo: "asc" }] }),
-  ]);
+  const { programas, margens, parcelas, faixas, fontes, config, alertaOrigens, alertaProgramas } = await lerTelaDeValores();
   const acessos = await prisma.acesso.findMany({ orderBy: { email: "asc" } });
   const margem = new Map(margens.map((m) => [m.tipo, m]));
   const horizonte = faixas.length ? Math.max(...faixas.map((f) => f.ateMes)) + 1 : 0;

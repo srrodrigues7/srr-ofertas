@@ -1,5 +1,5 @@
 import { ImapFlow } from "imapflow";
-import { dormir } from "@/lib/datas";
+import { dormir } from "@/pacote/datas";
 
 /**
  * Lê, na caixa do e-mail da operação, o código de verificação que um portal

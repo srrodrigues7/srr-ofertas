@@ -1,11 +1,10 @@
 import { connection } from "next/server";
 import { exigirAcessoNaTela } from "@/lib/acesso/acesso";
-import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
+import { lerPedidosDeBusca } from "@/pacote/leituras";
 import { alternarBusca, apagarBusca, buscarAgora, salvarBusca } from "../acoes";
 import Atualizador from "../_componentes/Atualizador";
 import Cabecalho from "../_componentes/Cabecalho";
-import { CLASSE, haQuanto } from "../_componentes/formato";
+import { CLASSE, haQuanto } from "@/pacote/formato";
 import s from "../tela.module.css";
 
 /**
@@ -15,13 +14,7 @@ import s from "../tela.module.css";
 export default async function BuscasPage() {
   await connection();
   await exigirAcessoNaTela();
-  const [buscas, lugares, contagens, ultimosAgora, cfg] = await Promise.all([
-    prisma.busca.findMany({ orderBy: [{ classe: "asc" }, { origem: "asc" }, { destino: "asc" }] }),
-    prisma.lugar.findMany({ select: { codigo: true, cidade: true, pais: true } }),
-    prisma.oferta.groupBy({ by: ["buscaId"], where: { ativa: true, buscaId: { not: null } }, _count: true }),
-    prisma.buscaAgora.findMany({ orderBy: { pedidoEm: "desc" }, take: 200 }),
-    lerConfiguracao(["busca.estadia_min_padrao", "busca.estadia_max_padrao"]),
-  ]);
+  const { buscas, lugares, contagens, ultimosAgora, cfg } = await lerPedidosDeBusca();
   const lugar = new Map(lugares.map((l) => [l.codigo, l]));
   const ofertas = new Map(contagens.map((c) => [c.buscaId, c._count]));
   const agoraDe = new Map<number, (typeof ultimosAgora)[number]>();

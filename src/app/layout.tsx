@@ -4,6 +4,8 @@ import { classesDasFontes } from "@/kit/fontes";
 import { visualDoNavegador, visualQueVale } from "@/kit/visual";
 // O kit da SRR primeiro (cores, letra, cantos, barras: o mesmo do VoePro);
 // depois o que é só do Radar.
+// Entrega o banco ao pacote do Radar (src/pacote/banco.ts) antes de qualquer tela.
+import "@/lib/prisma";
 import "@/kit/kit.css";
 import "./globals.css";
 

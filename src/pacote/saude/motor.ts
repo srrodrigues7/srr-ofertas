@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma";
-import { CHAVES_DA_SAUDE, lerConfiguracao } from "@/lib/configuracao";
-import { ErroDeConfiguracao, mensagemDe } from "@/lib/erros";
+import { prisma } from "../banco";
+import { CHAVES_DA_SAUDE, lerConfiguracao } from "../configuracao";
+import { ErroDeConfiguracao, mensagemDe } from "../erros";
 
 /**
  * O retrato da saúde do motor, lido do banco. Usado pela tela de Saúde e pelo

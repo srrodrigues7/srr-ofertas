@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
+import { prisma } from "../banco";
+import { lerConfiguracao } from "../configuracao";
 
 /**
  * O que a tela de Saúde mostra das operadoras (V1b): a última leitura da

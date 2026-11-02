@@ -1,6 +1,6 @@
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/ofertas/client";
 import { prisma } from "@/lib/prisma";
-import { horaLocalParaBanco, paraBanco } from "@/lib/datas";
+import { horaLocalParaBanco, paraBanco } from "@/pacote/datas";
 import {
   chaveDaOferta,
   chaveDoPreco,
@@ -258,42 +258,6 @@ export async function gravarPrecos(precos: PrecoNovo[]): Promise<number> {
         ultima_em = now()`;
   }
   return itens.length;
-}
-
-export type ResultadoConferencia = "ok" | "mudou" | "esgotou" | "nao_deu";
-
-/**
- * Registra a conferência de uma oferta na fonte (o revalidador da V1b/V4
- * chama isto). Regra do Saulo: esgotou sai da vitrine; preço mudou atualiza o
- * preço e marca a variação; não deu para conferir fica como estava, sem selo
- * — e oferta sem selo não pode ser aprovada (`podeSerAprovada`).
- * `valor` é o preço conferido na unidade da oferta (milhas, se é em milhas; senão R$).
- */
-export async function registrarConferencia(
-  ofertaId: bigint,
-  r: { resultado: ResultadoConferencia; valor?: number | null; motivo?: string | null },
-): Promise<void> {
-  const o = await prisma.oferta.findUniqueOrThrow({ where: { id: ofertaId }, select: { milhas: true, precoBrl: true } });
-  const emMilhas = o.milhas != null;
-  const anterior = emMilhas ? o.milhas : (o.precoBrl?.toNumber() ?? null);
-  const valor = r.valor ?? null;
-  const resultado: ResultadoConferencia =
-    r.resultado === "ok" && valor != null && anterior != null && valor !== anterior ? "mudou" : r.resultado;
-  const variacao = valor != null && anterior ? Math.round((valor / anterior - 1) * 10_000) / 100 : null;
-  await prisma.oferta.update({
-    where: { id: ofertaId },
-    data: {
-      conferenciaResultado: resultado,
-      conferenciaMotivo: r.motivo ?? null,
-      conferenciaAnterior: anterior,
-      conferenciaValor: valor,
-      conferenciaVariacao: variacao,
-      // "Não deu" não ganha selo: continua sem poder ser aprovada.
-      conferidaEm: resultado === "nao_deu" ? null : new Date(),
-      ...(resultado === "esgotou" ? { ativa: false } : {}),
-      ...(resultado === "mudou" && valor != null ? (emMilhas ? { milhas: Math.round(valor) } : { precoBrl: valor }) : {}),
-    },
-  });
 }
 
 /** Só oferta conferida (ok ou com o preço já atualizado) pode ser aprovada.

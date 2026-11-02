@@ -1,5 +1,5 @@
-import { codigoDaCompanhia } from "@/lib/companhias";
-import { mesDe } from "@/lib/datas";
+import { codigoDaCompanhia } from "@/pacote/companhias";
+import { mesDe } from "@/pacote/datas";
 import { ETIQUETAS, type Composicao, type OfertaNova } from "@/lib/coleta/molde";
 import { linkSmiles } from "@/lib/coleta/fontes/smiles";
 import { normalizar, trechoDoPrograma, type AlertaLido, type Trecho } from "./leitor";
@@ -20,7 +20,9 @@ import { normalizar, trechoDoPrograma, type AlertaLido, type Trecho } from "./le
  * - o preço em reais que o grupo anuncia é só referência interna.
  */
 
-export const FONTE_ALERTA = "alerta_cpm";
+// A fonte e o formato de `dados_fonte.alerta` moram no pacote (as telas usam).
+import { FONTE_ALERTA, type DadosDoAlerta } from "@/pacote/alertas";
+export { FONTE_ALERTA, type DadosDoAlerta };
 
 export type Resultado =
   | "oferta"
@@ -49,25 +51,6 @@ export type Contexto = {
   enviadaEm: Date;
   /** Passou da validade: entende tudo, mas não grava oferta. */
   vencido: boolean;
-};
-
-/** O que vai em `dados_fonte.alerta` — a visão da equipe (nada disto vai ao cliente). */
-export type DadosDoAlerta = {
-  mensagemId: string;
-  enviadaEm: string;
-  programaNoAlerta: string;
-  datasIda: string[];
-  datasVolta: string[];
-  idaTexto: string;
-  voltaTexto: string | null;
-  /** O preço de venda que o GRUPO anuncia, em R$ sem taxas. Só referência. */
-  cpmBrl: number | null;
-  /** A taxa como veio quando não é em reais (a equipe confere). */
-  taxaOutraMoeda: string | null;
-  /** Depois da conferência no calendário da Smiles: as milhas (Clube, só ida)
-   *  de cada data que sobrou — para o card dizer "N datas a este preço". */
-  milhasPorDiaIda?: Record<string, number>;
-  milhasPorDiaVolta?: Record<string, number>;
 };
 
 export type Decisao = {

@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { chromium, type Browser, type BrowserContext, type Frame, type Locator, type Page } from "playwright-core";
-import { dormir } from "@/lib/datas";
+import { dormir } from "@/pacote/datas";
 import { esperarCodigo } from "./codigo-email";
 
 /**

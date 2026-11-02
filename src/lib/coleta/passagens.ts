@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { CHAVES_DA_COLETA, lerConfiguracao, type ConfiguracaoDaColeta } from "@/lib/configuracao";
-import { nomeDaCompanhia } from "@/lib/companhias";
-import { diasEntre, doBanco, fimDoMes, hoje, inicioDoMes, mesDe, somarDias } from "@/lib/datas";
+import { CHAVES_DA_COLETA, lerConfiguracao, type ConfiguracaoDaColeta } from "@/pacote/configuracao";
+import { nomeDaCompanhia } from "@/pacote/companhias";
+import { diasEntre, doBanco, fimDoMes, hoje, inicioDoMes, mesDe, somarDias } from "@/pacote/datas";
 import type { Contador } from "./http";
 import { desativarAusentes, gravarLugares, gravarOfertas, gravarPrecos } from "./gravar";
 import type { OfertaNova, PrecoNovo } from "./molde";

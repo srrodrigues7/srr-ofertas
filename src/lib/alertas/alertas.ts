@@ -1,8 +1,9 @@
-import { Prisma } from "@/generated/prisma/client";
+import { pedirReleituraDosAlertas } from "@/pacote/gravacoes";
+import { Prisma } from "@/generated/ofertas/client";
 import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
-import { hoje } from "@/lib/datas";
-import { mensagemDe } from "@/lib/erros";
+import { lerConfiguracao } from "@/pacote/configuracao";
+import { hoje } from "@/pacote/datas";
+import { mensagemDe } from "@/pacote/erros";
 import { gravarOfertas } from "@/lib/coleta/gravar";
 import { chaveDaOferta } from "@/lib/coleta/molde";
 import type { Log } from "@/lib/coleta/nucleo";
@@ -242,12 +243,8 @@ export async function marcarTodasParaLerDeNovo(): Promise<number> {
  * Os que voltam a valer voltam com a conferência que tinham.
  */
 export async function relerRecentes(): Promise<number> {
-  const { "alertas.validade_horas": horas } = await lerConfiguracao(["alertas.validade_horas"]);
-  await prisma.$executeRaw`
-    UPDATE "ofertas"."alerta_mensagem" SET lida_em = NULL
-     WHERE enviada_em >= LEAST(now() - (${horas}::int * interval '1 hour'),
-                               date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo')`;
-  await prisma.$executeRaw`UPDATE "ofertas"."oferta" SET ativa = false WHERE ativa AND fonte_id = ${FONTE_ALERTA}`;
+  // A mesma marcação que a tela de Valores usa (pacote); aqui o motor já relê na hora.
+  await pedirReleituraDosAlertas();
   let lidas = 0;
   for (;;) {
     const r = await lerPendentes();

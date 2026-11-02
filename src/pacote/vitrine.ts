@@ -1,8 +1,8 @@
-import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
+import { Prisma } from "@/generated/ofertas/client";
+import { prisma } from "./banco";
+import { lerConfiguracao } from "./configuracao";
 import { lerValores, precificar, type Preco } from "./preco";
-import type { DadosDoAlerta } from "@/lib/alertas/regras";
+import type { DadosDoAlerta } from "./alertas";
 
 /**
  * A vitrine da equipe: as ofertas ativas, com custo, venda e parcelas,

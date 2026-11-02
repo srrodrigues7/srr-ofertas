@@ -1,6 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@/generated/prisma/client";
-import { ErroDeConfiguracao } from "@/lib/erros";
+import { PrismaClient } from "@/generated/ofertas/client";
+import { usarBanco } from "@/pacote/banco";
+import { ErroDeConfiguracao } from "@/pacote/erros";
 
 // Prisma 7 não embute mais o engine: a conexão passa por um adapter.
 //
@@ -29,6 +30,11 @@ function cliente(): PrismaClient {
   globalForPrisma.prisma ??= criarCliente();
   return globalForPrisma.prisma;
 }
+
+// O pacote do Radar (src/pacote/) usa este mesmo cliente. Ele vai também para o
+// VoePro, que entrega o cliente de lá (etapa L): por isso o pacote recebe o
+// cliente em vez de importar este arquivo.
+usarBanco(cliente);
 
 /**
  * O cliente só nasce na primeira consulta, não quando o arquivo é importado.

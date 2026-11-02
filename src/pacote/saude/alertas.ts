@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma";
-import { lerConfiguracao, CHAVES_DOS_ALERTAS } from "@/lib/configuracao";
-import { FONTE_ALERTA } from "./regras";
+import { prisma } from "../banco";
+import { lerConfiguracao, CHAVES_DOS_ALERTAS } from "../configuracao";
+import { FONTE_ALERTA } from "../alertas";
 
 /**
  * O que a tela de Saúde mostra dos alertas do WhatsApp (V6): os números de

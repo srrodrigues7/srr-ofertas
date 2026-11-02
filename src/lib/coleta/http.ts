@@ -1,4 +1,4 @@
-import { mensagemDe } from "@/lib/erros";
+import { mensagemDe } from "@/pacote/erros";
 
 /**
  * Pedidos às fontes, sempre com prazo (lição 9: nada fica pendurado).

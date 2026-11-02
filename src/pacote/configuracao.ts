@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { ErroDeConfiguracao } from "@/lib/erros";
+import { prisma } from "./banco";
+import { ErroDeConfiguracao } from "./erros";
 
 /**
  * A configuração mora na tabela `ofertas.configuracao`, não no código.

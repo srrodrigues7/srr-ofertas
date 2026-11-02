@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { lerConfiguracao } from "@/lib/configuracao";
-import { mensagemDe } from "@/lib/erros";
-import { dormir, doBanco, fimDoMes, hoje, inicioDoMes, somarDias } from "@/lib/datas";
-import { registrarConferencia } from "@/lib/coleta/gravar";
+import { lerConfiguracao } from "@/pacote/configuracao";
+import { mensagemDe } from "@/pacote/erros";
+import { dormir, doBanco, fimDoMes, hoje, inicioDoMes, somarDias } from "@/pacote/datas";
+import { registrarConferencia } from "@/pacote/conferencia";
 import { executar, type Log } from "@/lib/coleta/nucleo";
 import { VARIAVEIS_DO_EMAIL } from "./codigo-email";
 import { PortalCativa, SenhaRecusada, VARIAVEIS_DA_CATIVA, marcaDaCredencial, type BloqueioNoPortal } from "./portal-cativa";

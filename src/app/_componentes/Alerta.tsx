@@ -1,6 +1,6 @@
-import type { ItemVitrine } from "@/lib/ofertas/vitrine";
+import type { ItemVitrine } from "@/pacote/vitrine";
 import { conferirAgora, conferirAlerta } from "../acoes";
-import { milhas, reais } from "./formato";
+import { milhas, reais } from "@/pacote/formato";
 import s from "../tela.module.css";
 
 /**

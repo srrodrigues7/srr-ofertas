@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { mensagemDe } from "@/lib/erros";
+import { mensagemDe } from "@/pacote/erros";
 import { FonteRecusou, type Contador } from "./http";
 
 /**

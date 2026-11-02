@@ -1,9 +1,9 @@
 import { connection } from "next/server";
 import { exigirAcessoNaTela } from "@/lib/acesso/acesso";
-import { duracao, lerSaude, type Saude } from "@/lib/motor/saude";
-import { mensagemDe } from "@/lib/erros";
-import { lerSaudeDasOperadoras, type SaudeOperadora } from "@/lib/revalidador/saude";
-import { lerSaudeDosAlertas, type SaudeDosAlertas } from "@/lib/alertas/saude";
+import { duracao, lerSaude, type Saude } from "@/pacote/saude/motor";
+import { mensagemDe } from "@/pacote/erros";
+import { lerSaudeDasOperadoras, type SaudeOperadora } from "@/pacote/saude/revalidador";
+import { lerSaudeDosAlertas, type SaudeDosAlertas } from "@/pacote/saude/alertas";
 import Atualizador from "../_componentes/Atualizador";
 import Cabecalho from "../_componentes/Cabecalho";
 import s from "./page.module.css";
