@@ -1,5 +1,17 @@
 # Etapa L2 — O motor num servidor na nuvem
 
+> **ADIADA (03/11/2026) — o motor segue no notebook.** Decisão do Saulo: sem
+> servidor pago ("muito caro"). Nada desta especificação é construído nem
+> contratado; ela fica guardada para se um dia o notebook não der conta.
+> Conferido no mesmo dia: o motor **não liga sozinho** quando o Windows liga
+> — não há tarefa no Agendador nem atalho de inicialização; ele roda num
+> `npm run motor` aberto à mão (o de agora subiu em 02/11 às 19:09, versão
+> `1915246`). O caminho para ligar sozinho já existe e nunca rodou de ponta
+> a ponta: o instalador do O0 (`instalador/`, "Instalar SRR Ofertas": vigia +
+> Agendador, sobe sem ninguém entrar no Windows, volta se cair, atualiza do
+> `main`). Precisa de uma chave de leitura do GitHub, do `.env` de produção
+> em `C:SRR-Ofertas` e de parar o motor manual antes (uma trava só).
+
 **Esforço: alto.** O código do motor quase não muda. O peso está em pôr
 num computador alugado, ligado na internet o tempo todo, a chave do banco de
 produção, o login do robô da Cativa e a senha de app do Gmail, e em trocar o
