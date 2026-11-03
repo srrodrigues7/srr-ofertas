@@ -27,6 +27,26 @@ deploy anterior.
    conferir) e "Radar: valores" (mudar margem, milheiro, regras).
 6. **Uma chave de banco própria para as telas, sem poder de apagar tabela**
    (`srr_ofertas_tela`).
+7. **Só gestores mexem em Pedidos de busca e em Valores** (02/11, depois que
+   um "Tirar" sem querer apagou a rota 18, GRU-CDG, na produção: "tinha que
+   travar essa tela, vai que um funcionário desavisado vai lá e apaga tudo").
+   Os gestores são **escolhidos por ele**, começando **só com ele**. Entra
+   **nesta etapa**, não antes. Na prática, o interruptor "Radar: valores" é o
+   de gestor e passa a cobrir também os pedidos de busca:
+   - **"Radar"** (todo funcionário com o interruptor): vê as cinco abas, usa
+     "Buscar agora", "Conferir agora" e "Conferi" (alertas). Em Pedidos de
+     busca e em Valores vê tudo, **sem os botões e formulários de mudar**.
+   - **"Radar: valores"** (gestor): também cria, liga/desliga e exclui pedidos
+     de busca, e muda tudo em Valores (programas, margem, parcelas, faixas,
+     fontes, configuração, alertas).
+   - A trava vale **na ação** (`exigirAcao("RADAR_VALORES")` na primeira
+     linha de `salvarBusca`, `alternarBusca`, `apagarBusca` e de todas as
+     de Valores), não só no botão escondido.
+8. **"Tirar" vira "Excluir" e pede confirmação** antes de apagar; os botões de
+   Pedidos de busca (Buscar agora, Ligar/Desligar, Excluir) ganham **ícones**,
+   não só texto ("Tirar tem que pedir confirmação. Pode até trocar por
+   excluir. Use ícones tbm"). A confirmação diz a rota e quantas ofertas
+   perdem o vínculo com ela (a chave da oferta é `ON DELETE SET NULL`).
 
 **Condição do Guardião para o passo 1** (FUSAO, R18 e seção 6): o plano
 mostra como o VoePro lê o `ofertas` **sem virar dono dele nem migrá-lo**, e o
@@ -199,6 +219,13 @@ escrita para a sessão do VoePro, com estas exigências:
 Todas respondidas (ver "O que o Saulo decidiu"). Nota da pergunta 5: **todo
 Administrador do VoePro ganha os dois interruptores sozinho**, como o VoePro
 já trata o Administrador.
+
+**Aberta (02/11), por causa da decisão 7:** o Administrador do VoePro ganhar
+"Radar: valores" sozinho briga com "gestores que eu escolho, começando só
+comigo" se houver Administrador além do Saulo. Alternativas: (A) "Radar:
+valores" **não** vem sozinho com Administrador, só ligado à mão na Equipe —
+recomendada; (B) vem sozinho, e o Saulo confere quem é Administrador antes do
+passo 3. Responder antes do passo 3.
 
 ## Plano do passo 1 e do passo 1b (esperando o "sim" do Saulo e do Guardião)
 
@@ -434,6 +461,7 @@ pergunta 6 = B, o papel novo nasce primeiro lá).
 | L-11 | **Deploy do VoePro levando o que não foi revisado** (R14) | MÉDIO | passos 2, 3 e 3b em deploys só com eles |
 | L-12 | **Versões**: o pacote espera o mesmo Prisma 7.10 e o mesmo Next 16.3.8 | MÉDIO | o script confere a versão instalada (lockfile) do `prisma`, `@prisma/client` e `@prisma/adapter-pg`; o VoePro crava 7.10.0 no passo 2 |
 | L-13 | **Dois painéis por uma semana**, com regras de acesso diferentes | BAIXO | a controle confere `ofertas.acesso` e os interruptores lado a lado |
+| L-14 | **Até a L chegar, o painel próprio não tem gestor**: qualquer conta liberada exclui pedido de busca sem confirmação, muda Valores e também libera, desliga e tira outras contas da lista `ofertas.acesso` | MÉDIO | decisão 7 só entra na L (escolha do Saulo); até lá, a lista de acesso com poucas contas e de confiança; se o Saulo quiser, a confirmação do "Excluir" pode vir antes, sozinha (sem migração nem mudança de acesso) |
 
 ## Como provar
 
@@ -460,7 +488,11 @@ pergunta 6 = B, o papel novo nasce primeiro lá).
    digitado dá "sem acesso"; uma ação chamada à mão é recusada.
 9. "Buscar agora", "Conferir agora", "Conferi" e salvar em Valores pelo
    VoePro: os pedidos entram na fila com o id de quem fez, e o motor atende.
-10. (pergunta 5 = B) quem tem só "Radar" vê Valores sem poder salvar.
+10. (pergunta 5 = B, decisão 7) quem tem só "Radar" vê Pedidos de busca e
+    Valores **sem os botões de mudar**; `salvarBusca`, `alternarBusca`,
+    `apagarBusca` e as de Valores, chamadas à mão, são recusadas.
+10b. (decisão 8) "Excluir" pede confirmação e, cancelado, não apaga; os botões
+    de Pedidos de busca têm ícone.
 11. Passo 4: `ofertas.srrviagens.com.br` leva a `voepro…/ofertas`; o
     `.vercel.app` do Radar não serve mais o painel.
 

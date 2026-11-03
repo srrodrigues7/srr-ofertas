@@ -39,7 +39,7 @@ antes e deixa "ligar tudo" para o final. Tudo roda local até lá.
 | V5   | Robô do Telegram — aviso de oferta de nota alta, atalho para aprovar | V4 | médio | esperando |
 | V6   | [Alertas do WhatsApp](V6-alertas-whatsapp.md) — cada alerta do grupo "Alerta Passagens CPM" vira oferta, com preço pelo milheiro da SRR | V1b | alto | **aprovada** (30/10, no main). Na produção, 0 ofertas até agora: **não é defeito** (nada novo no grupo desde sexta 30/10; ver C2 no fim deste arquivo). Prova com o grupo de verdade: primeiro dia útil, 03/11 |
 | L0   | [Painel no ar](L0-painel-no-ar.md) — o painel publicado na Vercel, com o login do MilesPro e a lista de liberados, no banco de **produção**; motor segue no computador do Saulo | V6 | médio (subiu para alto: login e produção) | **construída e publicada** (01/11, `ofertas.srrviagens.com.br`; publicação conduzida pelo Guardião da fusão). "Sair" corrigido para só o Radar (C3, 02/11, no ramo `publicar/c3-e-visual`) |
-| L    | [Radar dentro do VoePro](L-radar-no-voepro.md) — as telas do Radar viram telas do VoePro (menu lateral, `/ofertas`, interruptor na Equipe); o motor fica aqui | L0 | alto (encostado no xalto) | **especificação reescrita** (02/11, com as 4 respostas do Saulo; revisor da fusão OK com ressalvas, incorporadas); todas as perguntas respondidas (dois interruptores; chave de banco só das telas); **passo 1 construído** (02/11, ramo `l/passo-1-pacote`, provado no banco de testes; espera o revisor e o push); 1b espera |
+| L    | [Radar dentro do VoePro](L-radar-no-voepro.md) — as telas do Radar viram telas do VoePro (menu lateral, `/ofertas`, interruptor na Equipe); o motor fica aqui | L0 | alto (encostado no xalto) | **especificação reescrita** (02/11, com as 4 respostas do Saulo; revisor da fusão OK com ressalvas, incorporadas); todas as perguntas respondidas (dois interruptores; chave de banco só das telas); **passo 1 no `main`** (02/11, push junto com o C1, `1915246`); 1b espera; **decisões 7 e 8 novas** (02/11: só gestores mexem em Pedidos de busca e Valores, pelo interruptor "Radar: valores"; "Tirar" vira "Excluir" com confirmação e ícones); uma pergunta aberta (Administrador ganha "Radar: valores" sozinho?) |
 | L2   | [Motor na nuvem](L2-motor-na-nuvem.md) — o motor num servidor alugado em São Paulo, sem depender do notebook (decisão do Saulo, 02/11) | L0 | alto | **especificação escrita** (02/11); espera a escolha do servidor e da ponte dos alertas |
 | R    | Resultado — card ligado à venda no VoePro, para o motor aprender | VoePro no ar | alto | esperando |
 
@@ -90,6 +90,14 @@ que investigar em cada fonte.
   usuário do VoePro e do MilesPro. Mapa e riscos da fusão:
   `C:SERSSAULOPROGRAMINGusaousao.md`.
 - **Trabalho contínuo num computador dedicado** que fica sempre ligado.
+- **Só gestores mexem em Pedidos de busca e em Valores** (02/11/2026, depois
+  de um "Tirar" sem querer apagar a rota 18, GRU-CDG, na produção). Gestores
+  escolhidos pelo Saulo, começando só com ele; funcionário vê as telas sem os
+  botões de mudar; a trava vale na ação, não só no botão. **Entra na etapa L**
+  (interruptor "Radar: valores"), não antes. Junto: "Tirar" vira "Excluir",
+  com confirmação, e os botões de Pedidos de busca ganham ícones. Detalhe nas
+  decisões 7 e 8 de [L-radar-no-voepro.md](L-radar-no-voepro.md); risco de
+  até lá no L-14.
 - **Curadoria manual:** funcionário vê, analisa, aprova e posta no grupo.
 - **Origem BSB** acima de tudo; internacional pode sair de GRU ou GIG.
 - **Uma pessoa dedicada** à curadoria nos picos (Black Friday).
