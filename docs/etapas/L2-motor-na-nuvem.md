@@ -11,6 +11,18 @@
 > Agendador, sobe sem ninguém entrar no Windows, volta se cair, atualiza do
 > `main`). Precisa de uma chave de leitura do GitHub, do `.env` de produção
 > em `C:SRR-Ofertas` e de parar o motor manual antes (uma trava só).
+>
+> **Atualização (03/11, tarde): o motor já liga sozinho quando o Saulo entra
+> no Windows**, sem o instalador e sem administrador. Um atalho minimizado
+> na pasta de Inicialização (`shell:startup`, "SRR Ofertas - Motor.lnk")
+> abre `%LOCALAPPDATA%SRR-Ofertasmotor.cmd`, um laço que liga o
+> `npm run motor` da pasta do repositório e o religa 10 s depois de cair; a
+> saída vai para `%LOCALAPPDATA%SRR-Ofertasmotor-saida.log`. Provado no
+> mesmo dia (motor 40400, "Peguei a trava" às 14:29:02). A tarefa do
+> Agendador tentada antes devolvia 1 sem rodar e foi apagada. Limites: só
+> liga **depois que o Saulo entra no Windows** (não na tela de login); fechar
+> a janela minimizada para o motor; e ele roda o código da pasta de
+> trabalho, então um `git pull` lá só vale depois de o motor religar.
 
 **Esforço: alto.** O código do motor quase não muda. O peso está em pôr
 num computador alugado, ligado na internet o tempo todo, a chave do banco de
