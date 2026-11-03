@@ -220,12 +220,12 @@ Todas respondidas (ver "O que o Saulo decidiu"). Nota da pergunta 5: **todo
 Administrador do VoePro ganha os dois interruptores sozinho**, como o VoePro
 já trata o Administrador.
 
-**Aberta (02/11), por causa da decisão 7:** o Administrador do VoePro ganhar
-"Radar: valores" sozinho briga com "gestores que eu escolho, começando só
-comigo" se houver Administrador além do Saulo. Alternativas: (A) "Radar:
-valores" **não** vem sozinho com Administrador, só ligado à mão na Equipe —
-recomendada; (B) vem sozinho, e o Saulo confere quem é Administrador antes do
-passo 3. Responder antes do passo 3.
+**Respondida (03/11), por causa da decisão 7:** o Administrador do VoePro
+**ganha "Radar: valores" sozinho** (resposta B do Saulo: "SIM"). Ser
+Administrador no VoePro é, portanto, ser gestor do Radar. Antes do passo 3,
+a controle lista quem é Administrador no VoePro e o Saulo confere que são só
+os gestores que ele quer; os demais gestores ganham o interruptor à mão na
+Equipe.
 
 ## Plano do passo 1 e do passo 1b (esperando o "sim" do Saulo e do Guardião)
 
