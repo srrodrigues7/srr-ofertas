@@ -200,8 +200,8 @@ function traduzirPacotes(vitrine: VitrineCativa, saidas: Saidas, lugares: Map<st
         semAeroporto.add(p.destino);
         continue;
       }
-      for (const h of s.hoteis ?? []) {
-        const o = ofertaDePacote(p, s, h, { ida, volta, internacional, destino: { codigo: destino.codigo, nome: destino.nome }, vitrine });
+      for (const [i, h] of (s.hoteis ?? []).entries()) {
+        const o = ofertaDePacote(p, s, h, { ida, volta, internacional, destino: { codigo: destino.codigo, nome: destino.nome }, vitrine, opcao: i + 1 });
         if (o) ofertas.push(o);
       }
     }
@@ -213,7 +213,15 @@ function ofertaDePacote(
   p: PacoteCativa,
   s: PacoteCativa["origens"][number],
   h: PacoteCativa["origens"][number]["hoteis"][number],
-  x: { ida: string; volta: string; internacional: boolean; destino: { codigo: string; nome: string }; vitrine: VitrineCativa },
+  x: {
+    ida: string;
+    volta: string;
+    internacional: boolean;
+    destino: { codigo: string; nome: string };
+    vitrine: VitrineCativa;
+    /** A posição do hotel na saída (1, 2, 3): a "Opção" dele no orçamento da Cativa. */
+    opcao: number;
+  },
 ): OfertaNova | null {
   const preco = reais(h.preco);
   if (!preco) return null;
@@ -252,9 +260,9 @@ function ofertaDePacote(
     aceitaCrianca: crianca ? true : null,
     etiquetas,
     fornecedor: "Cativa",
-    // O orçamento do pacote no sistema da Cativa (o "Abrir na Cativa" da vitrine);
-    // sem ele, a página do pacote na vitrine aberta.
-    link: s.link || linkDaVitrine(p.slug, s.iata),
+    // O orçamento do pacote no sistema da Cativa (o "Abrir na Cativa" da vitrine),
+    // na opção deste hotel; sem ele, a página do pacote na vitrine aberta.
+    link: linkDoHotel(s.link, x.opcao) || linkDaVitrine(p.slug, s.iata),
     localizador: {
       pacote: p.src || p.nome,
       nome: p.nome,
@@ -423,6 +431,23 @@ function voltaCoerente(ida: string | null, volta: string | null): string | null 
   if (ok(volta)) return volta;
   const anoSeguinte = `${Number(volta.slice(0, 4)) + 1}${volta.slice(4)}`;
   return volta < ida && ok(anoSeguinte) ? anoSeguinte : null;
+}
+
+/**
+ * O orçamento da saída aberto no hotel da linha. A Cativa monta UM orçamento
+ * por saída, com uma "Opção" por hotel na mesma ordem da vitrine, e ele abre na
+ * Opção 1 (o primeiro hotel): sem `option`, as outras linhas abriam outro
+ * hotel (relato da equipe, 04/11; conferido em 3 orçamentos, opções 1 a 3).
+ * Link que não é orçamento (WhatsApp, texto solto) fica como veio.
+ */
+export function linkDoHotel(link: string | undefined, opcao: number): string {
+  if (!link) return "";
+  if (!/^https:\/\/premium\.infotravel\.com\.br\/orcamento-web\/[^#]*\?/.test(link)) return link;
+  // Os links antigos do site já trazem "&option=3": troca, não repete. Um
+  // "#..." no fim fica depois do parâmetro (senão o servidor não o recebe).
+  if (/[?&]option=\d*/.test(link)) return link.replace(/([?&]option=)\d*/, `$1${opcao}`);
+  const fim = link.indexOf("#");
+  return fim < 0 ? `${link}&option=${opcao}` : `${link.slice(0, fim)}&option=${opcao}${link.slice(fim)}`;
 }
 
 const linkDaVitrine = (slug: string, saida: string) => `${ENDERECO_CATIVA}#pacote=${encodeURIComponent(slug)}&saida=${saida}`;

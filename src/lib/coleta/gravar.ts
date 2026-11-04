@@ -149,7 +149,8 @@ export async function gravarOfertas(ofertas: OfertaNova[], coletaId: bigint | nu
     ) {
       return prisma.oferta.update({
         where: { chave },
-        data: { vistaEm: new Date(), ativa: true, coletaId, buscaId: o.buscaId ?? undefined },
+        // O link não faz parte da conferência: vale o da fonte (o "Abrir na Cativa").
+        data: { vistaEm: new Date(), ativa: true, coletaId, buscaId: o.buscaId ?? undefined, link: o.link ?? null },
       });
     }
     if (

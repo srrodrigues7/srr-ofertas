@@ -284,11 +284,15 @@ revalidador pode trazê-los quando conferir uma oferta.
 - **"Abrir na Cativa"** (pacote): o `link` é o **orçamento** da saída no
   sistema da Cativa (`premium.infotravel.com.br/orcamento-web`, abre sem
   login): pacote e datas certos, voos, serviços e valores para 2 pessoas. A
-  Cativa monta **um orçamento por saída, com UM hotel** ("Opção 1"): nas saídas
-  de 2 ou 3 hotéis, o link das outras linhas mostra o pacote e as datas certos
-  com o hotel da opção da Cativa — a pessoa troca o hotel no portal. Conferido
-  em 2 links (Enotel 17–24/11: hotel certo; "Porto de Galinhas com Maragogi"
-  23/02: mostra o Porto 2 Life, a linha era o Enotel).
+  Cativa monta **um orçamento por saída, com uma "Opção" por hotel**, na mesma
+  ordem dos hotéis da vitrine, e ele abre na Opção 1. Até 04/11 o Radar mandava
+  o link puro para todas as linhas, e as linhas do 2º e do 3º hotel abriam o
+  1º (relato da equipe). Desde 04/11 o link leva `&option=N` (N = a posição do
+  hotel na saída; `linkDoHotel`, em `src/lib/coleta/pacotes.ts`), e abre o
+  hotel da linha. Conferido no navegador em 6 orçamentos, 17 opções, todas
+  certas (Bonito POA, Porto de Galinhas CNF, Natal BSB, Maceió BSB, Mata de São
+  João MGF, Gramado CGH). Link que não é orçamento (WhatsApp, texto solto) fica
+  como veio.
 - **Fica fora, contado no resumo:** saída com datas inválidas na fonte (volta
   antes da ida; a virada de ano é corrigida), pacote sem aeroporto conhecido
   ou de vários destinos (a Cativa põe a cidade de saída no destino).
