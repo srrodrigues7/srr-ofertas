@@ -261,8 +261,9 @@ function ofertaDePacote(
     etiquetas,
     fornecedor: "Cativa",
     // O orçamento do pacote no sistema da Cativa (o "Abrir na Cativa" da vitrine),
-    // na opção deste hotel; sem ele, a página do pacote na vitrine aberta.
-    link: linkDoHotel(s.link, x.opcao) || linkDaVitrine(p.slug, s.iata),
+    // na opção deste hotel; sem ele (ou no formato que não abre mais), a página
+    // do pacote na vitrine aberta.
+    link: linkDaLinha(s.link, x.opcao, p.slug, s.iata),
     localizador: {
       pacote: p.src || p.nome,
       nome: p.nome,
@@ -438,11 +439,14 @@ function voltaCoerente(ida: string | null, volta: string | null): string | null 
  * por saída, com uma "Opção" por hotel na mesma ordem da vitrine, e ele abre na
  * Opção 1 (o primeiro hotel): sem `option`, as outras linhas abriam outro
  * hotel (relato da equipe, 04/11; conferido em 3 orçamentos, opções 1 a 3).
- * Link que não é orçamento (WhatsApp, texto solto) fica como veio.
+ * Link que não é orçamento (WhatsApp, texto solto) fica como veio. Orçamento no
+ * formato antigo, que não abre mais (`orcamentoAntigo`), volta vazio: a linha
+ * fica com a página do pacote na vitrine (`linkDaLinha`).
  */
 export function linkDoHotel(link: string | undefined, opcao: number): string {
   if (!link) return "";
   if (!/^https:\/\/premium\.infotravel\.com\.br\/orcamento-web\/[^#]*\?/.test(link)) return link;
+  if (orcamentoAntigo(link)) return "";
   // Os links antigos do site já trazem "&option=3": troca, não repete. Um
   // "#..." no fim fica depois do parâmetro (senão o servidor não o recebe).
   if (/[?&]option=\d*/.test(link)) return link.replace(/([?&]option=)\d*/, `$1${opcao}`);
@@ -450,4 +454,37 @@ export function linkDoHotel(link: string | undefined, opcao: number): string {
   return fim < 0 ? `${link}&option=${opcao}` : `${link.slice(0, fim)}&option=${opcao}${link.slice(fim)}`;
 }
 
+/**
+ * O orçamento no formato antigo, que o sistema da Cativa não abre mais.
+ *
+ * Entre 06/11 e 09/11/2026 a Infotravel trocou o formato do link do orçamento
+ * (chamado #29 do VoePro, 11/11). O antigo é o código "CATI | nº | conferência"
+ * em base64 (`token=Q0FUSSB8…`) e hoje dá 404 "Orçamento não disponível", com
+ * ou sem `option`, até o de um orçamento de dois dias antes. O novo
+ * (`token=MXxDQVRJ…`, "1|CATI|nº|0" mais uma assinatura) abre, e o `option`
+ * continua valendo. A vitrine da Cativa ainda traz o antigo nas saídas cotadas
+ * antes da troca (1.743 de 1.792 em 11/11); quando ela cotar de novo, o link
+ * novo entra sozinho. Não dá para converter um no outro: o novo é assinado.
+ */
+export function orcamentoAntigo(link: string): boolean {
+  const token = /[?&]token=([^&#]*)/.exec(link)?.[1];
+  if (!token) return false;
+  let codigo: string;
+  try {
+    codigo = Buffer.from(decodeURIComponent(token), "base64").toString("latin1");
+  } catch {
+    return false;
+  }
+  return /^[A-Z]{2,10} \| \d+ \| [0-9A-F]{16,64}$/i.test(codigo.trim());
+}
+
 const linkDaVitrine = (slug: string, saida: string) => `${ENDERECO_CATIVA}#pacote=${encodeURIComponent(slug)}&saida=${saida}`;
+
+/**
+ * O "Abrir na Cativa" da linha: o orçamento da saída no hotel dela; sem
+ * orçamento que abra, a página do pacote na vitrine, já na saída certa (o site
+ * leva `#pacote=…&saida=BSB` para `/pacotes/<nome>?saida=brasilia`).
+ */
+export function linkDaLinha(link: string | undefined, opcao: number, slug: string, saida: string): string {
+  return linkDoHotel(link, opcao) || linkDaVitrine(slug, saida);
+}

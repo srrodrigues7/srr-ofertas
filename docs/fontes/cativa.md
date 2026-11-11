@@ -292,7 +292,8 @@ revalidador pode trazê-los quando conferir uma oferta.
   hotel da linha. Conferido no navegador em 6 orçamentos, 17 opções, todas
   certas (Bonito POA, Porto de Galinhas CNF, Natal BSB, Maceió BSB, Mata de São
   João MGF, Gramado CGH). Link que não é orçamento (WhatsApp, texto solto) fica
-  como veio.
+  como veio. Orçamento no formato antigo, que não abre mais desde ~09/11, vira a
+  página do pacote na vitrine (ver "Chamado #29", no fim desta ficha).
 - **Fica fora, contado no resumo:** saída com datas inválidas na fonte (volta
   antes da ida; a virada de ano é corrigida), pacote sem aeroporto conhecido
   ou de vários destinos (a Cativa põe a cidade de saída no destino).
@@ -332,3 +333,30 @@ revalidador pode trazê-los quando conferir uma oferta.
   `npm run cativa` gravou 236 pacotes e 1.291 bloqueios das nossas saídas
   (em 16/10 eram 226 e 1.245), 6 requisições na primeira leitura e 1 na
   seguinte.
+
+## Chamado #29 — o orçamento antigo não abre mais (11/11/2026)
+
+- **Relato:** "quando clico em ofertas na Cativa, aparece que a oferta não está
+  disponível" (Bárbara, chamado #29 do VoePro).
+- **O que mudou lá:** entre 06/11 e 09/11 o sistema de orçamentos da Cativa
+  (Infotravel, rodapé "1.3.15") trocou o formato do link. O antigo,
+  `token=Q0FUSSB8…` (base64 de "CATI | nº | conferência"), dá **404,
+  "Orçamento não disponível"**, com ou sem `option`, até para orçamentos de
+  05 e 06/11 (não é vencimento). O novo, `token=MXxDQVRJ…` ("1|CATI|nº|0" e
+  uma assinatura), abre, e o `&option=N` continua levando ao hotel da linha.
+  Não dá para converter um no outro: o novo é assinado.
+- **A vitrine ainda traz o antigo:** em 11/11, 1.743 de 1.792 saídas (só as
+  cotadas de 09/11 em diante têm o novo). Saindo de BSB, com data futura, 242
+  linhas de hotel com o antigo e 6 com o novo. A própria vitrine não mostra mais o link do
+  orçamento (só "Enviar no WhatsApp").
+- **Conserto:** `orcamentoAntigo` reconhece o formato antigo, e `linkDaLinha`
+  (em `src/lib/coleta/pacotes.ts`) põe no lugar a página do pacote na vitrine,
+  já na saída certa (`#pacote=<slug>&saida=BSB`, que o site leva para
+  `/pacotes/<nome>?saida=brasilia`; conferido BSB e GRU). O orçamento novo
+  segue com `&option=N`. Quando a Cativa cotar a saída de novo, o link novo
+  entra sozinho na coleta seguinte. A coleta regrava o link de toda oferta
+  ativa (upsert), então não precisa acerto no banco.
+- **Prova:** `npm run testar:link-cativa` (19 contas, sem banco nem
+  internet). Com a vitrine real de 11/11, a regra separou exatamente os 1.743
+  antigos dos 49 novos; no navegador, a página do pacote abriu em Brasília com
+  os 3 hotéis, e um orçamento novo com `&option=3` abriu no 3º hotel.

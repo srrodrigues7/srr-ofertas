@@ -645,7 +645,9 @@ via sessão de controle): nada construído, nenhum aviso dela na tela.
 - **"Abrir na Cativa"** abre o orçamento da saída (pacote e datas certos), mas
   com UM hotel: nas saídas de 2–3 hotéis, as outras linhas abrem o orçamento
   com o hotel da Cativa (ver a ficha). A tela diz "por pessoa · quarto duplo"
-  / "por pessoa · ida e volta" no preço e nas parcelas.
+  / "por pessoa · ida e volta" no preço e nas parcelas. (Desde 04/11 abre no
+  hotel da linha, `&option=N`. Desde 11/11, chamado #29: o orçamento no formato
+  antigo dá 404 lá, e a linha abre a página do pacote na vitrine; ver a ficha.)
 - Pacotes com mais de um destino (Cartagena + San Andrés, Peru + Colômbia)
   ficam fora: a Cativa não diz o destino.
 - **Produção:** a migração `cativa` ainda não foi aplicada lá.
