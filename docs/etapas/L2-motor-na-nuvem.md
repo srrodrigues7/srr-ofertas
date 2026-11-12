@@ -23,6 +23,28 @@
 > liga **depois que o Saulo entra no Windows** (não na tela de login); fechar
 > a janela minimizada para o motor; e ele roda o código da pasta de
 > trabalho, então um `git pull` lá só vale depois de o motor religar.
+>
+> **Atualização (12/11): o de 03/11 nunca funcionou fora do app do Claude.**
+> O app redireciona o que se grava em `AppData` para uma pasta só dele
+> (`AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache`). O `.cmd` e o
+> log foram parar lá; o motor de 03/11 subiu de dentro do app, por isso
+> "provou". No reinício de 11/11 o atalho abriu o `.cmd`, mas o log apontava
+> para `C:\Users\saulo\AppData\Local\SRR-Ofertas\`, que para o Windows não
+> existe: "O sistema não pode encontrar o caminho especificado" em laço, e o
+> Radar ficou 30 h sem ler ofertas. (A tarefa do Agendador que "devolvia 1"
+> em 03/11 caiu na mesma armadilha.) Refeito fora do `AppData`:
+> `scripts\windows\motor-ao-entrar.cmd` (mesmo laço; religa em 10 s, ou em
+> 5 min se sair com 78) vai para `C:\Users\saulo\SRR-Ofertas\motor.cmd`,
+> com a saída em `motor-saida.log` ao lado; o atalho da Inicialização abre
+> `conhost.exe --headless`, **sem janela nenhuma**, então ninguém fecha sem
+> querer. Instala com `scripts\windows\instalar-motor-ao-entrar.ps1`,
+> **rodado fora do app** (PowerShell do menu Iniciar); o app do Claude não
+> cria atalho de inicialização sem o OK do Saulo. Provado em 12/11 com a
+> mesma linha do atalho, lançada por um processo de fora do app: subiu como
+> reserva ("Fico esperando a vez") e religou sozinho depois de derrubado.
+> Enquanto o instalador não roda, o atalho ainda é o velho. Para pegar código novo: encerrar o
+> `node.exe` do motor; o laço religa com a versão da pasta. Conferir se
+> ligou: tela Saúde do Radar ("Motores ligados") ou o `motor-saida.log`.
 
 **Esforço: alto.** O código do motor quase não muda. O peso está em pôr
 num computador alugado, ligado na internet o tempo todo, a chave do banco de
