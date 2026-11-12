@@ -42,7 +42,8 @@
 > cria atalho de inicialização sem o OK do Saulo. Provado em 12/11 com a
 > mesma linha do atalho, lançada por um processo de fora do app: subiu como
 > reserva ("Fico esperando a vez") e religou sozinho depois de derrubado.
-> Enquanto o instalador não roda, o atalho ainda é o velho. Para pegar código novo: encerrar o
+> Instalado pelo Saulo em 12/11 às 09:44 (atalho conferido, sem cópia no
+> LocalCache do app). Para pegar código novo: encerrar o
 > `node.exe` do motor; o laço religa com a versão da pasta. Conferir se
 > ligou: tela Saúde do Radar ("Motores ligados") ou o `motor-saida.log`.
 
